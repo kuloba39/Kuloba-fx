@@ -1,6 +1,7 @@
 // ========================================================
 // 🔐 GLOBAL APPLICATION CONFIGURATION & RUNTIME STATES
 // ========================================================
+const derivWS = new WebSocket('wss://ws.binaryws.com/websockets/v3?app_id=YOUR_APP_ID');
 
 // 1. SECURE INTEGRATED OAUTH REDIRECTION ROUTER
 function loginWithDeriv() {
