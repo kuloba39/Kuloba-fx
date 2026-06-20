@@ -833,31 +833,3 @@ const CONFIG = {
 window.addEventListener('DOMContentLoaded', () => {
     initializeTradingViewChart("OANDA:XAUUSD");
 });
-// Function to initialize the connection
-function initDerivConnection() {
-    const derivWS = new WebSocket(`wss://ws.binaryws.com/websockets/v3?app_id=${DERIV_APP_ID}`);
-
-    derivWS.onopen = () => {
-        console.log("Connected to Deriv API");
-        document.querySelector('.status').innerText = "ONLINE"; // Update your UI
-    };
-
-    derivWS.onmessage = (msg) => {
-        const data = JSON.parse(msg.data);
-        console.log("Message received:", data);
-    };
-
-    derivWS.onclose = () => {
-        console.log("Connection lost. Attempting reconnection...");
-        document.querySelector('.status').innerText = "OFFLINE";
-        // Attempt to reconnect after 5 seconds
-        setTimeout(initDerivConnection, 5000); 
-    };
-
-    derivWS.onerror = (err) => {
-        console.error("WebSocket error:", err);
-    };
-}
-
-// Start the connection immediately
-initDerivConnection();
