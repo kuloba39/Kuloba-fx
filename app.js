@@ -60,7 +60,8 @@ window.addEventListener('load', connectToDeriv);
 // OAuth + Signup
 // --------------------------------------------------------
 function loginWithDeriv() {
-    const redirectUrl = window.location.href.split('?')[0];
+    // Use origin only (e.g. https://btraderhub.vercel.app) — must match exactly what you registered on api.deriv.com
+    const redirectUrl = window.location.origin + "/";
     const oauthUrl = `https://oauth.deriv.com/oauth2/authorize?app_id=${DERIV_APP_ID}&l=en&brand=deriv&redirect_uri=${encodeURIComponent(redirectUrl)}`;
     window.location.href = oauthUrl;
 }
