@@ -1,68 +1,158 @@
 // ========================================================
-// 🔐 GLOBAL APPLICATION CONFIGURATION & RUNTIME STATES
+// 🔐 GLOBAL STATE
 // ========================================================
+let derivWS = null;
+let isReconnecting = false;
+let pendingToken = null;
 
-let derivWS = null; // Global WebSocket instance
-let isReconnecting = false; // FIX: Prevent connection storms in the reconnect loop
+// ========================================================
+// 🚀 SINGLE ENTRY POINT — runs once page loads
+// ========================================================
+window.addEventListener('load', () => {
+    populateAssetDropdown();
+    initializeTradingViewChart("OANDA:XAUUSD");
 
-// FIX: Single, clean definition of connectToDeriv (was defined 3 times with conflicting logic)
-function connectToDeriv() {
+    // Check if Deriv sent back a token in the URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token1');
+    if (token) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+        pendingToken = token; // store it — we'll use it once WS opens
+        showStatusDiv("Connecting to Deriv...", "info");
+    }
+
+    // Open the WebSocket connection
+    openWebSocket();
+});
+
+// ========================================================
+// 🔌 WEBSOCKET — open once, reuse everywhere
+// ========================================================
+function openWebSocket() {
     if (typeof DERIV_APP_ID === 'undefined') {
-        console.warn("Config not loaded yet, waiting...");
-        setTimeout(connectToDeriv, 1000);
+        console.warn("DERIV_APP_ID not ready, retrying in 500ms...");
+        setTimeout(openWebSocket, 500);
         return;
     }
 
-    // FIX: Assign to global derivWS, then attach listeners to it (not to a local 'socket' variable)
+    // Don't open a second connection if one is already open
+    if (derivWS && (derivWS.readyState === WebSocket.OPEN || derivWS.readyState === WebSocket.CONNECTING)) {
+        return;
+    }
+
+    console.log("Opening WebSocket with App ID:", DERIV_APP_ID);
     derivWS = new WebSocket(`wss://ws.derivws.com/websockets/v3?app_id=${DERIV_APP_ID}`);
 
     derivWS.onopen = () => {
-        console.log("✅ Connected to Deriv");
+        console.log("✅ WebSocket open");
         isReconnecting = false;
-        const status = document.querySelector(".status");
-        if (status) status.innerText = "ONLINE";
         updateConnectionStatus(true);
+
+        // If a token was waiting, authorize now
+        if (pendingToken) {
+            authorizeWithToken(pendingToken);
+            pendingToken = null;
+        }
     };
 
-    derivWS.onerror = (err) => console.error("WS Error:", err);
-
-    derivWS.onclose = () => {
-        console.log("Connection lost.");
-        const status = document.querySelector('.status');
-        if (status) status.innerText = "OFFLINE";
+    derivWS.onerror = (err) => {
+        console.error("WS Error:", err);
         updateConnectionStatus(false);
     };
 
-    // FIX: onmessage must be set here, on the instance, not as a bare global statement
+    derivWS.onclose = () => {
+        console.warn("WS closed.");
+        updateConnectionStatus(false);
+    };
+
+    // All messages go through one handler
     derivWS.onmessage = (msg) => {
-        const data = JSON.parse(msg.data);
-
-        // Route to the WebSocket session handler if it's been initialized
-        if (typeof handleIncomingMarketData === 'function') {
-            handleIncomingMarketData(data);
-        }
-
-        // Contract status updates
-        if (data.msg_type === 'proposal_open_contract') {
-            const contract = data.proposal_open_contract;
-            if (contract && contract.is_sold) {
-                updateDashboardStats(contract.profit, contract.status);
-                logJournalMessage(`Trade finished: ${contract.status.toUpperCase()} | Profit: ${contract.profit}`);
-            }
-        }
+        const response = JSON.parse(msg.data);
+        handleAllMessages(response);
     };
 }
 
-// Wait for the whole page to load before starting the connection
-window.addEventListener('load', connectToDeriv);
+// ========================================================
+// 📨 CENTRAL MESSAGE HANDLER
+// ========================================================
+function handleAllMessages(response) {
+    // Authorization response
+    if (response.msg_type === 'authorize') {
+        if (response.error) {
+            console.error("Auth error:", response.error.message);
+            showStatusDiv(`Auth Error: ${response.error.message}`, 'error');
+        } else {
+            console.log("✅ Authorized as:", response.authorize.email);
+            showStatusDiv(`✅ Connected as: ${response.authorize.email}`, 'success');
 
-// --------------------------------------------------------
-// OAuth + Signup
-// --------------------------------------------------------
+            // Show balance, hide login/signup buttons
+            const balanceDisplay = document.getElementById('balance-display');
+            const loginBtn      = document.getElementById('login-nav-btn');
+            const signupBtn     = document.getElementById('signup-nav-btn');
+            const accountBal    = document.getElementById('account-balance');
+
+            if (balanceDisplay) balanceDisplay.classList.remove('hidden');
+            if (loginBtn)       loginBtn.classList.add('hidden');
+            if (signupBtn)      signupBtn.classList.add('hidden');
+            if (accountBal) {
+                accountBal.innerText = `${parseFloat(response.authorize.balance).toFixed(2)} ${response.authorize.currency}`;
+            }
+
+            // Start digit tick stream
+            derivWS.send(JSON.stringify({ ticks: "R_10", subscribe: 1 }));
+        }
+    }
+
+    // Tick data → digit tracker
+    if (response.msg_type === 'tick' && response.tick) {
+        if (typeof updateDigitStats === 'function') updateDigitStats(response.tick.quote);
+    }
+
+    // Contract result
+    if (response.msg_type === 'proposal_open_contract') {
+        const contract = response.proposal_open_contract;
+        if (contract && contract.is_sold) {
+            updateDashboardStats(contract.profit, contract.status);
+            logJournalMessage(`Trade finished: ${contract.status.toUpperCase()} | Profit: ${contract.profit}`);
+        }
+    }
+
+    // Bot engine
+    if (typeof handleIncomingMarketData === 'function') handleIncomingMarketData(response);
+}
+
+// ========================================================
+// 🔐 AUTHORIZE WITH TOKEN
+// ========================================================
+function authorizeWithToken(token) {
+    console.log("🔐 Sending authorize request...");
+    showStatusDiv("Authorizing your Deriv account...", "info");
+    derivWS.send(JSON.stringify({ authorize: token }));
+}
+
+// ========================================================
+// 💬 STATUS DIV HELPER
+// ========================================================
+function showStatusDiv(message, type) {
+    const el = document.getElementById('connection-status');
+    if (!el) return;
+    el.classList.remove('hidden');
+    const styles = {
+        info:    "text-xs p-3 rounded-lg border border-blue-500/30 bg-blue-50 text-blue-600 font-medium",
+        success: "text-xs p-3 rounded-lg border border-emerald-500/30 bg-emerald-50 text-green-700 font-bold",
+        error:   "text-xs p-3 rounded-lg border border-red-500/30 bg-red-50 text-red-600 font-medium"
+    };
+    el.className = styles[type] || styles.info;
+    el.innerText = message;
+}
+
+// ========================================================
+// 🔑 OAUTH LOGIN / SIGNUP
+// ========================================================
 function loginWithDeriv() {
-    // Use origin only (e.g. https://btraderhub.vercel.app) — must match exactly what you registered on api.deriv.com
     const redirectUrl = window.location.origin + "/";
     const oauthUrl = `https://oauth.deriv.com/oauth2/authorize?app_id=${DERIV_APP_ID}&l=en&brand=deriv&redirect_uri=${encodeURIComponent(redirectUrl)}`;
+    console.log("🔗 OAuth URL:", oauthUrl);
     window.location.href = oauthUrl;
 }
 
@@ -70,9 +160,9 @@ function signUpWithDeriv() {
     window.location.href = "https://deriv.com/signup/";
 }
 
-// --------------------------------------------------------
-// Asset Dropdown
-// --------------------------------------------------------
+// ========================================================
+// 📋 ASSET DROPDOWN
+// ========================================================
 const marketAssets = {
     "Continuous Indices": ["Volatility 10", "Volatility 25", "Volatility 50", "Volatility 75", "Volatility 100"],
     "1S Indices": ["Volatility 10 (1s)", "Volatility 25 (1s)", "Volatility 50 (1s)", "Volatility 75 (1s)", "Volatility 100 (1s)"],
@@ -82,119 +172,22 @@ const marketAssets = {
 function populateAssetDropdown() {
     const select = document.getElementById('market-asset-select');
     if (!select) return;
-
     Object.keys(marketAssets).forEach(category => {
         const group = document.createElement('optgroup');
         group.label = category;
-
         marketAssets[category].forEach(asset => {
             const option = document.createElement('option');
             option.value = asset;
             option.text = asset;
             group.appendChild(option);
         });
-
         select.appendChild(group);
     });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    populateAssetDropdown();
-    initializeTradingViewChart("OANDA:XAUUSD");
-});
-
-// --------------------------------------------------------
-// 2. OAuth Token URL Intercept
-// --------------------------------------------------------
-window.addEventListener('load', () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token1');
-    if (token) {
-        window.history.replaceState({}, document.title, window.location.pathname);
-        initializeWebSocketSession(token);
-    }
-});
-
-// --------------------------------------------------------
-// 3. WebSocket Session (Authorize + Subscribe)
-// --------------------------------------------------------
-function initializeWebSocketSession(token) {
-    const statusDiv = document.getElementById('connection-status');
-    if (statusDiv) {
-        statusDiv.className = "text-xs p-3 rounded-lg border border-blue-500/30 bg-blue-50 text-blue-600 font-medium";
-        statusDiv.innerText = "Initializing security handshake via token pass...";
-        statusDiv.classList.remove('hidden');
-    }
-
-    // FIX: Use the global derivWS; reconnect if it's not open yet
-    if (!derivWS || derivWS.readyState !== WebSocket.OPEN) {
-        connectToDeriv();
-        // Wait for the connection to open, then authorize
-        const waitForOpen = setInterval(() => {
-            if (derivWS && derivWS.readyState === WebSocket.OPEN) {
-                clearInterval(waitForOpen);
-                authorizeSession(token, statusDiv);
-            }
-        }, 200);
-    } else {
-        authorizeSession(token, statusDiv);
-    }
-}
-
-function authorizeSession(token, statusDiv) {
-    derivWS.send(JSON.stringify({ authorize: token }));
-
-    // Extend the global onmessage to handle authorization flow
-    const originalOnMessage = derivWS.onmessage;
-    derivWS.onmessage = function (msg) {
-        const response = JSON.parse(msg.data);
-        console.log("Incoming Message:", response.msg_type);
-
-        // Call original handler too
-        if (originalOnMessage) originalOnMessage.call(this, msg);
-
-        handleIncomingMarketData(response);
-
-        if (response.msg_type === 'authorize') {
-            if (response.error) {
-                if (statusDiv) {
-                    statusDiv.className = "text-xs p-3 rounded-lg border border-red-500/30 bg-red-50 text-red-600";
-                    statusDiv.innerText = `Auth Error: ${response.error.message}`;
-                }
-            } else {
-                if (statusDiv) {
-                    statusDiv.className = "text-xs p-3 rounded-lg border border-emerald-500/30 bg-emerald-50 text-brandGreen font-bold";
-                    statusDiv.innerText = `Connected securely as: ${response.authorize.email}`;
-                }
-
-                const balanceDisplay = document.getElementById('balance-display');
-                const loginBtn = document.getElementById('login-nav-btn');
-                const signupBtn = document.getElementById('signup-nav-btn');
-                const accountBalance = document.getElementById('account-balance');
-
-                if (balanceDisplay) balanceDisplay.classList.remove('hidden');
-                if (loginBtn) loginBtn.classList.add('hidden');
-                if (signupBtn) signupBtn.classList.add('hidden');
-
-                if (accountBalance) {
-                    const balance = parseFloat(response.authorize.balance).toFixed(2);
-                    const currency = response.authorize.currency;
-                    accountBalance.innerText = `${balance} ${currency}`;
-                }
-
-                // Subscribe to tick stream after authorization
-                derivWS.send(JSON.stringify({ ticks: "R_10", subscribe: 1 }));
-            }
-        }
-
-        if (response.msg_type === 'tick') {
-            const tickPrice = response.tick.quote;
-            if (typeof updateDigitStats === 'function') {
-                updateDigitStats(tickPrice);
-            }
-        }
-    };
-}
+// Legacy aliases so nothing else breaks
+function connectToDeriv() { openWebSocket(); }
+function initializeWebSocketSession(token) { pendingToken = token; openWebSocket(); }
 
 // --------------------------------------------------------
 // 4. Tab Navigation
@@ -731,17 +724,16 @@ function updateConnectionStatus(isConnected) {
 }
 
 // FIX: Added isReconnecting guard to prevent connection storms
+// Health check — reconnects if WS drops, never double-connects
 setInterval(() => {
     if (derivWS && derivWS.readyState === WebSocket.OPEN) {
         updateConnectionStatus(true);
         isReconnecting = false;
-    } else {
+    } else if (!isReconnecting) {
         updateConnectionStatus(false);
-        if (!isReconnecting) {
-            isReconnecting = true;
-            console.warn("Connection lost. Attempting reconnection...");
-            connectToDeriv();
-        }
+        isReconnecting = true;
+        console.warn("WS dropped, reconnecting...");
+        openWebSocket();
     }
 }, 5000);
 
