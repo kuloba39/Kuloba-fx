@@ -157,7 +157,7 @@ function loginWithDeriv() {
 }
 
 function signUpWithDeriv() {
-    window.location.href = "https://deriv.com/signup/";
+    window.location.href = "https://track.deriv.com/_Yi8lkjLk8sFMjdsyM5hasGNd7ZgqdRLk/1/";
 }
 
 // ========================================================
