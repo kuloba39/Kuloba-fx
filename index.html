@@ -10,177 +10,125 @@
             theme: {
                 extend: {
                     colors: {
-                        derivDark: '#F4F6F8',
-                        derivCard: '#FFFFFF',
-                        derivNav: '#FFFFFF',
-                        brandGreen: '#00C853',
-                        brandGreenHover: '#00A243',
+                        derivDark:        '#F4F6F8',
+                        derivCard:        '#FFFFFF',
+                        brandGreen:       '#00C853',
+                        brandGreenHover:  '#00A243',
                     }
                 }
             }
         }
     </script>
     <style>
+        /* Tab panes hidden by default */
+        .tab-pane { display: none; width: 100%; }
+        #dashboard-pane    { display: block; }
+
+        /* Bot builder needs flex for 3-column layout */
+        #bot-builder-pane  { display: none; flex-direction: row; }
+        #bot-builder-pane.active  { display: flex; }
+
+        /* Charts needs flex */
+        #charts-pane { display: none; }
+        #charts-pane.active { display: flex; }
+
+        /* Others just block */
+        .tab-pane.active { display: block; }
+        #bot-builder-pane.active, #charts-pane.active { display: flex; }
+
         .digit-circle {
             transition: all 0.3s ease;
             border: 2px solid #e5e7eb;
             cursor: pointer;
+            width: 64px; height: 64px;
         }
         .digit-circle:hover { transform: scale(1.1); }
+
+        /* Floating Run Bot bar — visible on all tabs */
+        #global-bot-bar {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            z-index: 9999;
+            background: #0f172a;
+            border-top: 1px solid #1e293b;
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        /* Push content above the bar */
+        body { padding-bottom: 64px; }
     </style>
 </head>
 <body class="bg-derivDark text-slate-800 font-sans h-screen flex flex-col overflow-hidden">
 
     <!-- ===== HEADER ===== -->
-    <header class="bg-derivNav border-b border-gray-200 h-14 flex items-center justify-between px-4 z-50 flex-shrink-0 shadow-sm">
-        <div class="flex items-center gap-6">
-            <span class="text-xl font-black tracking-wider text-slate-900">B<span class="text-brandGreen">traderhub</span></span>
-        </div>
+    <header class="bg-white border-b border-gray-200 h-14 flex items-center justify-between px-4 z-50 flex-shrink-0 shadow-sm">
+        <span class="text-xl font-black tracking-wider text-slate-900">B<span class="text-brandGreen">traderhub</span></span>
         <div class="flex items-center gap-3">
-            <!-- Connection Status -->
-            <div class="flex items-center text-xs font-bold px-3">
+            <div class="flex items-center text-xs font-bold">
                 <span id="status-dot" class="h-2 w-2 rounded-full bg-red-500 mr-2"></span>
                 <span id="status-text">OFFLINE</span>
             </div>
-
-            <!-- Balance (hidden until logged in) -->
             <div id="balance-display" class="hidden bg-gray-100 border border-gray-200 rounded px-3 py-1 flex items-center gap-2 text-sm">
-                <span class="text-xs font-semibold text-gray-500">💵 Balance</span>
-                <span id="account-balance" class="font-bold text-slate-900">0.00</span>
+                <span class="text-xs font-semibold text-gray-500">💵</span>
+                <span id="account-balance" class="font-bold text-slate-900">0.00 USD</span>
             </div>
-
-            <button onclick="loginWithDeriv()" id="login-nav-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs px-4 py-1.5 rounded transition shadow-sm">
+            <button onclick="loginWithDeriv()" id="login-nav-btn"
+                class="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs px-4 py-1.5 rounded transition shadow-sm">
                 Log in
             </button>
-            <button onclick="signUpWithDeriv()" id="signup-nav-btn" class="bg-gray-200 hover:bg-gray-300 text-slate-800 font-medium text-xs px-4 py-1.5 rounded transition shadow-sm">
+            <button onclick="signUpWithDeriv()" id="signup-nav-btn"
+                class="bg-gray-200 hover:bg-gray-300 text-slate-800 font-medium text-xs px-4 py-1.5 rounded transition shadow-sm">
                 Sign up
             </button>
         </div>
     </header>
 
     <!-- ===== NAV TABS ===== -->
-    <nav class="bg-derivCard border-b border-gray-200 h-12 flex items-center px-2 gap-1 flex-shrink-0">
-        <button id="tab-btn-dashboard" onclick="switchTab('dashboard')" class="tab-btn px-4 py-1.5 rounded text-sm font-medium transition text-white bg-blue-600 shadow-sm">
-            📊 Dashboard
-        </button>
-        <button id="tab-btn-bot-builder" onclick="switchTab('bot-builder')" class="tab-btn px-4 py-1.5 rounded text-sm font-medium transition text-gray-600 hover:text-slate-900 hover:bg-gray-100">
-            🤖 Bot Builder
-        </button>
-        <button id="tab-btn-charts" onclick="switchTab('charts')" class="tab-btn px-4 py-1.5 rounded text-sm font-medium transition text-gray-600 hover:text-slate-900 hover:bg-gray-100">
-            📈 Charts
-        </button>
-        <button id="tab-btn-copy-trading" onclick="switchTab('copy-trading')" class="tab-btn px-4 py-1.5 rounded text-sm font-medium transition text-gray-600 hover:text-slate-900 hover:bg-gray-100">
-            👥 Copy Trading
-        </button>
-        <button id="tab-btn-digits" onclick="switchTab('digits')" class="tab-btn px-4 py-1.5 rounded text-sm font-medium transition text-gray-600 hover:text-slate-900 hover:bg-gray-100">
-            0️⃣ Digit Stats
-        </button>
+    <nav class="bg-white border-b border-gray-200 h-12 flex items-center px-2 gap-1 flex-shrink-0 overflow-x-auto">
+        <button id="tab-btn-dashboard"    onclick="switchTab('dashboard')"    class="tab-btn px-4 py-1.5 rounded text-sm font-medium transition text-white bg-blue-600 shadow-sm whitespace-nowrap">📊 Dashboard</button>
+        <button id="tab-btn-bot-builder"  onclick="switchTab('bot-builder')"  class="tab-btn px-4 py-1.5 rounded text-sm font-medium transition text-gray-600 hover:bg-gray-100 whitespace-nowrap">🤖 Bot Builder</button>
+        <button id="tab-btn-charts"       onclick="switchTab('charts')"       class="tab-btn px-4 py-1.5 rounded text-sm font-medium transition text-gray-600 hover:bg-gray-100 whitespace-nowrap">📈 Charts</button>
+        <button id="tab-btn-copy-trading" onclick="switchTab('copy-trading')" class="tab-btn px-4 py-1.5 rounded text-sm font-medium transition text-gray-600 hover:bg-gray-100 whitespace-nowrap">👥 Copy Trading</button>
+        <button id="tab-btn-digits"       onclick="switchTab('digits')"       class="tab-btn px-4 py-1.5 rounded text-sm font-medium transition text-gray-600 hover:bg-gray-100 whitespace-nowrap">0️⃣ Digit Stats</button>
     </nav>
 
     <!-- ===== MAIN CONTENT ===== -->
-    <main class="flex-1 flex overflow-hidden relative w-full h-full">
+    <main class="flex-1 overflow-hidden relative">
 
-        <!-- DASHBOARD PANE -->
-        <div id="dashboard-pane" class="tab-pane w-full p-6 overflow-y-auto">
-            <div class="max-w-xl mx-auto bg-derivCard border border-gray-200 rounded-xl p-8 shadow-md mt-10 text-center">
-                <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-2xl mx-auto mb-4">
-                    🔐
-                </div>
+        <!-- DASHBOARD -->
+        <div id="dashboard-pane" class="tab-pane h-full overflow-y-auto p-4">
+            <div class="max-w-xl mx-auto bg-white border border-gray-200 rounded-xl p-8 shadow-md mt-10 text-center">
+                <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-2xl mx-auto mb-4">🔐</div>
                 <h2 class="text-2xl font-bold text-slate-900 mb-2">Welcome to Btraderhub</h2>
-                <p class="text-gray-500 text-sm mb-6 max-w-sm mx-auto">
-                    Connect your Deriv profile instantly via secure single sign-on to launch your automation trading systems.
-                </p>
-                <div class="space-y-4">
-                    <button onclick="loginWithDeriv()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg text-sm tracking-wide transition shadow-md">
-                        Connect My Deriv Account
-                    </button>
-                    <!-- FIX: Removed duplicate id="connection-status"; using unique id here -->
-                    <div id="connection-status" class="hidden text-xs p-3 rounded-lg border"></div>
-                </div>
+                <p class="text-gray-500 text-sm mb-6 max-w-sm mx-auto">Connect your Deriv profile instantly via secure single sign-on to launch your automation trading systems.</p>
+                <button onclick="loginWithDeriv()"
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg text-sm tracking-wide transition shadow-md mb-3">
+                    Connect My Deriv Account
+                </button>
+                <div id="connection-status" class="hidden text-xs p-3 rounded-lg border mt-3"></div>
             </div>
         </div>
 
-        <!-- BOT BUILDER PANE -->
-        <div id="bot-builder-pane" class="tab-pane hidden flex flex-1 overflow-hidden w-full h-full">
+        <!-- BOT BUILDER -->
+        <div id="bot-builder-pane" class="tab-pane h-full overflow-hidden">
 
-            <!-- Left sidebar: Strategy Parameters -->
-            <aside class="w-72 bg-derivCard border-r border-gray-200 flex flex-col flex-shrink-0 h-full">
-                <div class="p-3 border-b border-gray-200 bg-slate-50 font-bold text-xs tracking-wider text-slate-700">
-                    ⚙️ STRATEGY PARAMETERS
-                </div>
-                <div class="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
+            <!-- Left: Strategy Parameters -->
+            <aside class="w-64 bg-white border-r border-gray-200 flex flex-col flex-shrink-0 h-full overflow-y-auto">
+                <div class="p-3 border-b border-gray-200 bg-slate-50 font-bold text-xs tracking-wider text-slate-700">⚙️ STRATEGY</div>
+                <div class="p-3 space-y-3 text-xs">
                     <div>
-                        <label class="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">Market Asset</label>
-                        <select id="market-asset-select" class="w-full p-2 border rounded text-sm">
-                            <option value="">Select Market Asset</option>
+                        <label class="block text-[11px] font-bold uppercase text-gray-500 mb-1">Market Asset</label>
+                        <select id="market-asset-select" class="w-full p-2 border rounded text-xs">
+                            <option value="">Select Asset</option>
                         </select>
-                        <button onclick="suggestBestMarket()" class="mt-2 w-full bg-indigo-600 text-white py-1 rounded text-xs font-bold hover:bg-indigo-700">
-                            ✨ AI SUGGEST MARKET
-                        </button>
+                        <button onclick="suggestBestMarket()" class="mt-1 w-full bg-indigo-600 text-white py-1 rounded text-xs font-bold hover:bg-indigo-700">✨ AI SUGGEST</button>
                     </div>
-
                     <div>
-                        <label class="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">Trade Type</label>
-                        <select id="bot-trade-type" onchange="toggleAccumulatorFields()" class="w-full bg-gray-50 border border-gray-300 rounded p-2 font-medium focus:ring-1 focus:ring-blue-500 outline-none">
-                            <option value="over_under">Digits: Over/Under</option>
-                            <option value="even_odd">Digits: Even/Odd</option>
-                            <option value="rise_fall">Rise / Fall</option>
-                            <option value="rise_fall_equal">Rise / Fall (Allow Equals)</option>
-                            <option value="only_ups_downs">Only Ups / Only Downs</option>
-                            <option value="high_low_ticks">High / Low Ticks</option>
-                            <option value="accumulator">Accumulator Options</option>
-                        </select>
-                    </div>
-
-                    <div id="accumulator-config-panel" class="hidden p-3 rounded bg-blue-50/50 border border-blue-100">
-                        <label class="block text-[11px] font-bold uppercase tracking-wide text-blue-700 mb-1">Accumulator Growth Rate</label>
-                        <select id="bot-growth-rate" class="w-full bg-white border border-gray-300 rounded p-1.5 text-xs font-semibold outline-none">
-                            <option value="0.01">1% Growth Rate</option>
-                            <option value="0.02">2% Growth Rate</option>
-                            <option value="0.03" selected>3% Growth Rate</option>
-                            <option value="0.04">4% Growth Rate</option>
-                            <option value="0.05">5% Growth Rate</option>
-                        </select>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">Prediction</label>
-                            <input type="number" id="bot-prediction" value="1" min="0" max="8" class="w-full bg-gray-50 border border-gray-300 rounded p-2 text-center font-bold">
-                        </div>
-                        <div>
-                            <label class="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">Duration (Ticks)</label>
-                            <input type="number" id="bot-duration" value="1" min="1" max="10" class="w-full bg-gray-50 border border-gray-300 rounded p-2 text-center font-bold">
-                        </div>
-                    </div>
-
-                    <hr class="border-gray-200 my-2">
-
-                    <div>
-                        <label class="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">Initial Base Stake (USD)</label>
-                        <input type="number" id="bot-stake" value="10.00" step="0.50" class="w-full bg-gray-50 border border-gray-300 rounded p-2 font-mono font-bold text-slate-900">
-                    </div>
-
-                    <div>
-                        <label class="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">Martingale Multiplier</label>
-                        <input type="number" id="bot-martingale" value="2.1" step="0.1" class="w-full bg-gray-50 border border-gray-300 rounded p-2 font-mono font-bold text-slate-900">
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">Take Profit</label>
-                            <input type="number" id="bot-tp" value="50.00" class="w-full bg-gray-50 border rounded p-2 text-center text-emerald-600 font-bold">
-                        </div>
-                        <div>
-                            <label class="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">Stop Loss</label>
-                            <input type="number" id="bot-sl" value="100.00" class="w-full bg-gray-50 border rounded p-2 text-center text-red-600 font-bold">
-                        </div>
-                    </div>
-
-                    <!-- Bot market selector (used by bot engine) -->
-                    <div>
-                        <label class="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">Bot Market Symbol</label>
-                        <select id="bot-market" onchange="updateLiveChartAsset()" class="w-full bg-gray-50 border border-gray-300 rounded p-2 font-medium outline-none text-xs">
+                        <label class="block text-[11px] font-bold uppercase text-gray-500 mb-1">Bot Market</label>
+                        <select id="bot-market" onchange="updateLiveChartAsset()" class="w-full bg-gray-50 border border-gray-300 rounded p-2 text-xs">
                             <option value="R_10">Volatility 10</option>
                             <option value="R_25">Volatility 25</option>
                             <option value="R_50">Volatility 50</option>
@@ -198,132 +146,159 @@
                             <option value="JD100">Jump 100 Index</option>
                         </select>
                     </div>
+                    <div>
+                        <label class="block text-[11px] font-bold uppercase text-gray-500 mb-1">Trade Type</label>
+                        <select id="bot-trade-type" onchange="toggleAccumulatorFields()" class="w-full bg-gray-50 border border-gray-300 rounded p-2 text-xs">
+                            <option value="over_under">Digits: Over/Under</option>
+                            <option value="even_odd">Digits: Even/Odd</option>
+                            <option value="rise_fall">Rise / Fall</option>
+                            <option value="rise_fall_equal">Rise / Fall Equal</option>
+                            <option value="only_ups_downs">Only Ups / Downs</option>
+                            <option value="high_low_ticks">High / Low Ticks</option>
+                            <option value="accumulator">Accumulator</option>
+                        </select>
+                    </div>
+                    <div id="accumulator-config-panel" class="hidden p-2 rounded bg-blue-50 border border-blue-100">
+                        <label class="block text-[11px] font-bold uppercase text-blue-700 mb-1">Growth Rate</label>
+                        <select id="bot-growth-rate" class="w-full bg-white border border-gray-300 rounded p-1.5 text-xs">
+                            <option value="0.01">1%</option>
+                            <option value="0.02">2%</option>
+                            <option value="0.03" selected>3%</option>
+                            <option value="0.04">4%</option>
+                            <option value="0.05">5%</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[11px] font-bold uppercase text-gray-500 mb-1">Prediction</label>
+                            <input type="number" id="bot-prediction" value="1" min="0" max="8" class="w-full bg-gray-50 border border-gray-300 rounded p-2 text-center font-bold text-xs">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold uppercase text-gray-500 mb-1">Ticks</label>
+                            <input type="number" id="bot-duration" value="1" min="1" max="10" class="w-full bg-gray-50 border border-gray-300 rounded p-2 text-center font-bold text-xs">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold uppercase text-gray-500 mb-1">Stake (USD)</label>
+                        <input type="number" id="bot-stake" value="10.00" step="0.50" class="w-full bg-gray-50 border border-gray-300 rounded p-2 font-mono font-bold text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold uppercase text-gray-500 mb-1">Martingale x</label>
+                        <input type="number" id="bot-martingale" value="2.1" step="0.1" class="w-full bg-gray-50 border border-gray-300 rounded p-2 font-mono font-bold text-xs">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[11px] font-bold uppercase text-gray-500 mb-1">Take Profit</label>
+                            <input type="number" id="bot-tp" value="50.00" class="w-full bg-gray-50 border rounded p-2 text-center text-emerald-600 font-bold text-xs">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold uppercase text-gray-500 mb-1">Stop Loss</label>
+                            <input type="number" id="bot-sl" value="100.00" class="w-full bg-gray-50 border rounded p-2 text-center text-red-600 font-bold text-xs">
+                        </div>
+                    </div>
                 </div>
             </aside>
 
-            <!-- Center: Chart — uses Deriv SmartCharts (supports all Deriv symbols) -->
-            <section class="flex-1 bg-derivDark p-3 flex flex-col overflow-hidden h-full">
-                <div class="bg-white border border-gray-200 rounded-xl shadow-sm flex-1 overflow-hidden relative flex flex-col">
-                    <div class="h-10 border-b border-gray-100 bg-slate-50 px-4 flex items-center justify-between text-xs font-semibold text-slate-700">
-                        <span class="flex items-center gap-1.5 text-blue-600">📈 Live Technical Feed</span>
+            <!-- Center: Deriv Chart -->
+            <section class="flex-1 flex flex-col overflow-hidden h-full bg-derivDark p-2">
+                <div class="bg-white border border-gray-200 rounded-xl flex-1 overflow-hidden flex flex-col shadow-sm">
+                    <div class="h-9 border-b border-gray-100 bg-slate-50 px-3 flex items-center justify-between text-xs font-semibold text-slate-700 flex-shrink-0">
+                        <span class="text-blue-600">📈 Live Feed</span>
                         <span id="chart-asset-ticker" class="bg-blue-50 text-blue-700 font-bold px-2 py-0.5 rounded text-[10px]">R_10</span>
                     </div>
-                    <!-- Deriv SmartCharts iframe — works with all Deriv symbols like R_10, 1HZ10V, JD50 etc. -->
-                    <iframe
-                        id="deriv-chart-frame"
+                    <iframe id="deriv-chart-frame"
                         src="https://charts.deriv.com/?symbol=R_10&granularity=60"
-                        class="flex-1 w-full h-full border-0"
-                        allowfullscreen>
+                        class="flex-1 w-full h-full border-0" allowfullscreen>
                     </iframe>
                 </div>
             </section>
 
-            <!-- Right sidebar: Bot controls -->
-            <aside class="w-80 bg-derivCard border-l border-gray-200 flex flex-col flex-shrink-0 h-full">
-                <div class="p-3 border-b border-gray-200">
-                    <button id="run-bot-btn" onclick="toggleBotExecution()" class="w-full bg-brandGreen hover:bg-brandGreenHover text-white font-bold py-2 rounded text-xs tracking-wider transition shadow-sm">
-                        ▶ RUN BOT
-                    </button>
-                </div>
-
-                <div class="p-3 bg-gray-50 border-b border-gray-200 text-[11px] font-bold tracking-wide uppercase text-gray-500">
-                    <div class="grid grid-cols-3 gap-2 text-center mb-3">
-                        <div class="bg-white p-1.5 border border-gray-200 rounded">
-                            <div>Runs</div>
-                            <div id="stat-runs" class="text-sm font-mono font-black text-slate-800 mt-0.5">0</div>
-                        </div>
-                        <div class="bg-white p-1.5 border border-gray-200 rounded">
-                            <div>Stake</div>
-                            <div id="stat-stake" class="text-sm font-mono font-black text-slate-800 mt-0.5">0.00</div>
-                        </div>
-                        <div class="bg-white p-1.5 border border-gray-200 rounded">
-                            <div>Profit/Loss</div>
-                            <div id="stat-profit" class="text-sm font-mono font-black text-slate-800 mt-0.5">0.00</div>
-                        </div>
+            <!-- Right: Stats & Journal -->
+            <aside class="w-72 bg-white border-l border-gray-200 flex flex-col flex-shrink-0 h-full">
+                <div class="p-2 bg-gray-50 border-b border-gray-200 text-[11px] font-bold tracking-wide uppercase text-gray-500">
+                    <div class="grid grid-cols-3 gap-1.5 text-center mb-2">
+                        <div class="bg-white p-1.5 border border-gray-200 rounded"><div>Runs</div><div id="stat-runs" class="text-sm font-mono font-black text-slate-800">0</div></div>
+                        <div class="bg-white p-1.5 border border-gray-200 rounded"><div>Stake</div><div id="stat-stake" class="text-sm font-mono font-black text-slate-800">0.00</div></div>
+                        <div class="bg-white p-1.5 border border-gray-200 rounded"><div>P/L</div><div id="stat-profit" class="text-sm font-mono font-black text-slate-800">0.00</div></div>
                     </div>
-                    <div class="grid grid-cols-3 gap-2 text-center">
-                        <div class="bg-white p-1.5 border border-gray-200 rounded">
-                            <div>Win Rate</div>
-                            <div id="stat-win-rate" class="text-sm font-mono font-black text-slate-700 mt-0.5">0.0%</div>
-                        </div>
-                        <div class="bg-white p-1.5 border border-gray-200 rounded">
-                            <div>Peak Risk</div>
-                            <div id="stat-peak-exposure" class="text-sm font-mono font-black text-slate-700 mt-0.5">0.00</div>
-                        </div>
-                        <div class="bg-white p-1.5 border border-gray-200 rounded">
-                            <div>Streak</div>
-                            <div id="stat-current-streak" class="text-sm font-mono font-black text-slate-600 mt-0.5">0</div>
-                        </div>
+                    <div class="grid grid-cols-3 gap-1.5 text-center">
+                        <div class="bg-white p-1.5 border border-gray-200 rounded"><div>Win%</div><div id="stat-win-rate" class="text-sm font-mono font-black text-slate-700">0%</div></div>
+                        <div class="bg-white p-1.5 border border-gray-200 rounded"><div>Peak</div><div id="stat-peak-exposure" class="text-sm font-mono font-black text-slate-700">0.00</div></div>
+                        <div class="bg-white p-1.5 border border-gray-200 rounded"><div>Streak</div><div id="stat-current-streak" class="text-sm font-mono font-black text-slate-600">0</div></div>
                     </div>
                 </div>
-
-                <div class="px-3 py-2 bg-slate-100 text-[11px] font-bold text-slate-600 tracking-wider border-b border-gray-200">
-                    📜 LIVE TRANSACTIONS RECORD
+                <div class="px-2 py-1.5 bg-slate-100 text-[10px] font-bold text-slate-600 tracking-wider border-b border-gray-200">📜 TRANSACTIONS</div>
+                <div class="flex-1 overflow-y-auto p-2 space-y-1" id="transaction-rows-container">
+                    <div id="empty-rows-msg" class="text-center text-gray-400 text-xs pt-8 px-2">Connect and run bot to see trades.</div>
                 </div>
-
-                <div class="flex-1 overflow-y-auto p-2 space-y-1.5" id="transaction-rows-container">
-                    <div id="empty-rows-msg" class="text-center text-gray-400 text-xs pt-10 px-4">
-                        Connect your account and hit Run to stream live transaction payloads.
-                    </div>
-                </div>
-
-                <div class="h-32 border-t border-gray-200 flex flex-col bg-slate-950 font-mono text-[10px] text-emerald-400 p-2 overflow-hidden">
-                    <div class="text-[9px] uppercase tracking-wider font-bold text-slate-500 mb-1 border-b border-slate-800 pb-0.5">System Activity Log</div>
-                    <div id="journal-terminal-log" class="flex-1 overflow-y-auto space-y-0.5">
-                        [System Engine Initialized Idle...]
-                    </div>
+                <div class="h-28 border-t flex flex-col bg-slate-950 font-mono text-[10px] text-emerald-400 p-2 overflow-hidden flex-shrink-0">
+                    <div class="text-[9px] uppercase tracking-wider font-bold text-slate-500 mb-1 border-b border-slate-800 pb-0.5">Activity Log</div>
+                    <div id="journal-terminal-log" class="flex-1 overflow-y-auto space-y-0.5">[System Initialized...]</div>
                 </div>
             </aside>
         </div>
 
-        <!-- CHARTS PANE -->
-        <div id="charts-pane" class="tab-pane hidden flex-1 w-full h-full bg-slate-50 p-4 overflow-hidden">
-            <div class="bg-white border border-gray-200 rounded-xl shadow-sm w-full h-full flex flex-col overflow-hidden" style="min-height: calc(100vh - 160px);">
-                <div class="h-12 border-b border-gray-100 bg-slate-50 px-4 flex items-center justify-between text-xs font-semibold text-slate-700 flex-shrink-0">
-                    <span class="flex items-center gap-1.5 text-slate-900 text-sm">
-                        🔍 Dedicated Analysis Suite <span class="text-gray-400 font-normal text-xs">| Multi-asset charting room</span>
-                    </span>
+        <!-- CHARTS -->
+        <div id="charts-pane" class="tab-pane h-full p-3 bg-slate-50 overflow-hidden">
+            <div class="bg-white border border-gray-200 rounded-xl shadow-sm w-full h-full flex flex-col overflow-hidden">
+                <div class="h-11 border-b border-gray-100 bg-slate-50 px-4 flex items-center justify-between text-xs font-semibold flex-shrink-0">
+                    <span class="text-slate-900">🔍 Analysis Suite <span class="text-gray-400 font-normal">| Multi-asset</span></span>
                     <span class="bg-blue-100 text-blue-700 font-bold px-2 py-0.5 rounded text-[10px]">PRO TERMINAL</span>
                 </div>
-                <div id="tv-standalone-frame" class="flex-1 w-full h-full" style="min-height: 550px;"></div>
+                <div id="tv-standalone-frame" class="flex-1 w-full h-full" style="min-height:500px;"></div>
             </div>
         </div>
 
-        <!-- COPY TRADING PANE -->
-        <div id="copy-trading-pane" class="tab-pane hidden p-6 w-full overflow-y-auto">
+        <!-- COPY TRADING -->
+        <div id="copy-trading-pane" class="tab-pane h-full overflow-y-auto p-4">
             <div class="max-w-2xl mx-auto">
-                <h2 class="text-lg font-bold mb-4">Mirror Trading Configuration</h2>
-                <div class="bg-white p-6 rounded-xl border shadow-sm mb-4">
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Slave API Token</label>
-                    <input id="slave-token-input" placeholder="Enter slave account API token" class="w-full p-2 border rounded mb-3 text-sm">
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Stake Multiplier</label>
-                    <input id="slave-multiplier-input" type="number" value="1.0" step="0.1" class="w-full p-2 border rounded mb-3 text-sm">
-                    <button onclick="addNewSlave()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded text-sm transition">
-                        + ADD SLAVE ACCOUNT
-                    </button>
+                <h2 class="text-lg font-bold mb-4">👥 Mirror Trading</h2>
+                <div class="bg-white p-5 rounded-xl border shadow-sm mb-4 space-y-3">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Slave API Token</label>
+                        <input id="slave-token-input" placeholder="Enter slave account API token" class="w-full p-2 border rounded text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Stake Multiplier</label>
+                        <input id="slave-multiplier-input" type="number" value="1.0" step="0.1" class="w-full p-2 border rounded text-sm">
+                    </div>
+                    <button onclick="addNewSlave()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded text-sm transition">+ ADD SLAVE ACCOUNT</button>
                 </div>
-                <!-- FIX: Single slave list container with correct id used by app.js -->
                 <div id="slave-list-container" class="space-y-2">
                     <p class="text-xs text-gray-400">No slave accounts added yet.</p>
                 </div>
             </div>
         </div>
 
-        <!-- DIGIT STATS PANE -->
-        <!-- FIX: Moved out of <nav> where it was incorrectly nested -->
-        <div id="digits-pane" class="tab-pane hidden p-6 w-full overflow-y-auto">
-            <h2 class="text-xl font-bold mb-4">Real-Time Digit Statistics</h2>
-            <p class="text-xs text-gray-400 mb-6">Authorize your account and run the bot to stream live digit data.</p>
-            <div id="digit-circles-container" class="grid grid-cols-5 gap-4 max-w-lg">
-                <!-- Injected by JS -->
-            </div>
+        <!-- DIGIT STATS -->
+        <div id="digits-pane" class="tab-pane h-full overflow-y-auto p-4">
+            <h2 class="text-xl font-bold mb-2">0️⃣ Digit Statistics</h2>
+            <p class="text-xs text-gray-400 mb-5">Connect and run bot to stream live digit data. Click a digit to set as prediction.</p>
+            <div id="digit-circles-container" class="flex flex-wrap gap-3 max-w-lg"></div>
         </div>
 
     </main>
 
-    <!-- config.js MUST load before app.js -->
-    <script src="config.js"></script>
-    <script src="app.js"></script>
+    <!-- ===== GLOBAL BOT BAR — visible on ALL tabs, mobile-friendly ===== -->
+    <div id="global-bot-bar">
+        <div class="flex items-center gap-3 flex-1 min-w-0">
+            <div class="flex items-center gap-2 text-xs text-slate-400 flex-shrink-0">
+                <span id="bar-status-dot" class="h-2 w-2 rounded-full bg-red-500"></span>
+                <span id="bar-status-text" class="font-bold text-white">OFFLINE</span>
+            </div>
+            <div class="hidden sm:flex items-center gap-3 text-xs text-slate-400 min-w-0">
+                <span>Runs: <span id="bar-runs" class="text-white font-mono font-bold">0</span></span>
+                <span>P/L: <span id="bar-pl" class="font-mono font-bold text-white">0.00</span></span>
+                <span>Win: <span id="bar-wr" class="font-mono font-bold text-white">0%</span></span>
+            </div>
+        </div>
+        <button id="global-run-btn" onclick="toggleBotExecution()"
+            class="bg-brandGreen hover:bg-brandGreenHover text-white font-black text-sm px-6 py-2 rounded-lg tracking-wider transition shadow-lg flex-shrink-0">
+            ▶ RUN BOT
+        </button>
+    </div>
 
+    <!-- app.js — single script, no config.js needed -->
+    <script src="app.js"></script>
 </body>
 </html>
