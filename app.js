@@ -558,10 +558,11 @@ function executeContract(entrySpot) {
         currentStake = 0.35;
     }
 
-    // Digit contracts use ticks for duration
-    const isDigit = ['DIGITEVEN','DIGITODD','DIGITOVER','DIGITUNDER','DIGITMATCH','DIGITDIFF'].includes(contractType);
+    const isDigit    = ['DIGITEVEN','DIGITODD','DIGITOVER','DIGITUNDER','DIGITMATCH','DIGITDIFF'].includes(contractType);
+    const isRiseFall = ['CALL','PUT'].includes(contractType);
+    const isRunHL    = ['RUNHIGH','RUNLOW'].includes(contractType);
 
-    // Build order — exact Deriv API format
+    // Build params — strict Deriv API format
     const params = {
         amount:        parseFloat(currentStake.toFixed(2)),
         basis:         "stake",
@@ -570,19 +571,21 @@ function executeContract(entrySpot) {
         symbol:        market,
     };
 
-    // Duration — digit contracts need ticks
     if (isDigit) {
+        // Digit contracts: ticks 1-10
         params.duration      = Math.max(1, Math.min(10, duration));
         params.duration_unit = "t";
-    } else if (type === 'rise_fall') {
-        params.duration      = Math.max(1, duration);
-        params.duration_unit = "t";
-    } else if (type === 'only_ups_downs') {
+    } else if (isRunHL) {
+        // Only Ups/Downs: ticks 2-10
         params.duration      = Math.max(2, Math.min(10, duration));
         params.duration_unit = "t";
+    } else if (isRiseFall) {
+        // Rise/Fall: use minutes (ticks not supported on all markets)
+        params.duration      = 1;
+        params.duration_unit = "m";
     }
 
-    // Barrier only for over/under digit contracts
+    // Barrier for over/under only
     if (type === 'over_under') {
         params.barrier = pred.toString();
     }
@@ -593,7 +596,7 @@ function executeContract(entrySpot) {
         parameters: params
     };
 
-    log(`🎯 Sending: ${contractType} @ $${currentStake.toFixed(2)} | ${MKT[market]||market} | ${JSON.stringify({dur:params.duration, unit:params.duration_unit, barrier:params.barrier})}`, 'i');
+    log(`🎯 ${contractType} @ $${currentStake.toFixed(2)} | ${MKT[market]||market} | dur:${params.duration}${params.duration_unit}${params.barrier?' barrier:'+params.barrier:''}`, 'i');
 
     pendingContract = true;
     lastContractId  = "pending";
