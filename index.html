@@ -3,439 +3,612 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Btraderhub | Professional Trading Platform</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>tailwind.config={theme:{extend:{colors:{brand:'#00C853',brandHov:'#00A243'}}}}</script>
+    <title>Btraderhub | Smart Trading Platform</title>
     <style>
-        *{box-sizing:border-box;margin:0;padding:0;}
-        body{background:#0a0f1e;color:#e2e8f0;font-family:system-ui,sans-serif;height:100vh;display:flex;flex-direction:column;overflow:hidden;}
-        /* Scrollbar */
-        ::-webkit-scrollbar{width:4px;height:4px}
-        ::-webkit-scrollbar-track{background:#0a0f1e}
-        ::-webkit-scrollbar-thumb{background:#334155;border-radius:2px}
-        /* Panes */
-        .tab-pane{display:none;height:100%;width:100%;overflow:hidden;}
-        .tab-pane.active{display:flex;flex-direction:column;}
-        #dashboard-pane.active,#trading-bots-pane.active,#copy-trading-pane.active{display:block;overflow-y:auto;}
-        #bot-builder-pane.active,#deriv-chart-pane.active,#tv-chart-pane.active{display:flex;flex-direction:row;}
-        #hub-pane.active{display:flex;flex-direction:column;overflow:hidden;}
-        /* Nav */
-        .tab-btn{padding:5px 12px;border-radius:6px;font-size:11px;font-weight:700;white-space:nowrap;color:#64748b;cursor:pointer;border:none;background:transparent;transition:all .15s;}
-        .tab-btn:hover{background:#1e293b;color:#e2e8f0;}
-        .tab-btn.active{background:#00C853;color:#fff;}
-        /* Cards */
-        .card{background:#131c2e;border:1px solid #1e293b;border-radius:10px;}
-        .card-sm{background:#0f172a;border:1px solid #1e293b;border-radius:6px;}
-        /* Inputs */
-        input,select,textarea{background:#0a0f1e;border:1px solid #1e293b;color:#e2e8f0;border-radius:6px;padding:6px 10px;font-size:12px;width:100%;outline:none;font-family:inherit;}
-        input:focus,select:focus{border-color:#00C853;}
-        select option{background:#131c2e;}
-        /* Buttons */
-        .btn{border:none;border-radius:7px;font-weight:700;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;justify-content:center;gap:6px;}
-        .btn-green{background:#00C853;color:#fff;}.btn-green:hover{background:#00A243;}
-        .btn-red{background:#ef4444;color:#fff;}.btn-red:hover{background:#dc2626;}
-        .btn-blue{background:#3b82f6;color:#fff;}.btn-blue:hover{background:#2563eb;}
-        .btn-ghost{background:#1e293b;color:#94a3b8;border:1px solid #334155;}.btn-ghost:hover{color:#e2e8f0;border-color:#475569;}
-        .btn-amber{background:#f59e0b;color:#000;}.btn-amber:hover{background:#d97706;}
-        /* Direction */
-        .dir-btn{padding:5px 12px;border-radius:6px;font-size:11px;font-weight:700;border:1px solid #334155;background:#0a0f1e;color:#64748b;cursor:pointer;transition:all .15s;}
-        .dir-btn.sel-green{border-color:#00C853;background:#00C85318;color:#00C853;}
-        .dir-btn.sel-red{border-color:#ef4444;background:#ef444418;color:#ef4444;}
-        /* D-Circles */
-        .d-circle{width:68px;height:68px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border:2px solid #1e293b;background:#131c2e;transition:transform .2s,box-shadow .2s;user-select:none;position:relative;}
-        .d-circle:hover{transform:scale(1.09);}
-        .d-circle.rank-0{background:#166534;border-color:#22c55e;color:#fff;}
-        .d-circle.rank-1{background:#1d4ed8;border-color:#60a5fa;color:#fff;}
-        .d-circle.rank-8{background:#92400e;border-color:#f59e0b;color:#fff;}
-        .d-circle.rank-9{background:#991b1b;border-color:#f87171;color:#fff;}
-        .d-circle.active-pred{box-shadow:0 0 0 3px #00C853,0 0 12px #00C85344;}
-        /* Bot card */
-        .bot-card{background:#131c2e;border:1px solid #1e293b;border-radius:8px;padding:12px 14px;display:flex;align-items:center;gap:12px;transition:border-color .15s;}
-        .bot-card.is-loaded{border-color:#00C853;}
-        .bot-card.is-running{border-color:#f59e0b;animation:pulse-border 2s infinite;}
-        @keyframes pulse-border{0%,100%{border-color:#f59e0b;}50%{border-color:#fbbf24;}}
-        /* Signal */
-        .signal-card{background:#131c2e;border:1px solid #1e293b;border-radius:8px;padding:12px;}
-        .signal-card.strong{border-color:#00C853;}
-        .signal-card.medium{border-color:#3b82f6;}
-        .signal-card.weak{border-color:#f59e0b;}
-        /* Notification */
-        #notification-container{position:fixed;top:70px;right:16px;z-index:99999;display:flex;flex-direction:column;gap:8px;max-width:320px;}
-        .notif{background:#131c2e;border:1px solid #00C853;border-radius:10px;padding:12px 14px;box-shadow:0 4px 20px #00000066;animation:slideIn .3s ease;}
-        .notif.error{border-color:#ef4444;}
-        .notif.warning{border-color:#f59e0b;}
-        @keyframes slideIn{from{opacity:0;transform:translateX(40px);}to{opacity:1;transform:translateX(0);}}
-        /* Badge */
-        .badge{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;}
-        .badge-green{background:#00C85322;color:#00C853;border:1px solid #00C85344;}
-        .badge-red{background:#ef444422;color:#ef4444;border:1px solid #ef444444;}
-        .badge-blue{background:#3b82f622;color:#60a5fa;border:1px solid #3b82f644;}
-        .badge-amber{background:#f59e0b22;color:#fbbf24;border:1px solid #f59e0b44;}
-        /* Journal */
-        #journal-terminal-log{font-family:monospace;font-size:10px;}
-        /* Bot bar */
-        #global-bot-bar{position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#060c18;border-top:1px solid #1e293b;padding:9px 16px;display:flex;align-items:center;gap:12px;}
-        body{padding-bottom:56px;}
-        /* TV chart full */
-        #tv-chart-container{width:100%;height:100%;}
-        /* Deriv chart full */
-        #deriv-standalone-frame,#deriv-chart-frame{width:100%;height:100%;border:none;}
-        /* Sidebar */
-        .sidebar{width:240px;flex-shrink:0;overflow-y:auto;background:#0a0f1e;border-right:1px solid #1e293b;}
-        .sidebar-right{width:256px;flex-shrink:0;overflow-y:auto;background:#0a0f1e;border-left:1px solid #1e293b;display:flex;flex-direction:column;}
-        /* Mobile */
-        @media(max-width:768px){
-            .sidebar,.sidebar-right{display:none;}
-            #bot-builder-pane.active,#deriv-chart-pane.active,#tv-chart-pane.active{flex-direction:column;}
-        }
-        /* Digit bar */
-        .dbar-fill{height:5px;border-radius:3px;transition:width .5s;}
-        /* Stat pill */
-        .stat-pill{background:#0a0f1e;border:1px solid #1e293b;border-radius:6px;padding:6px 8px;text-align:center;}
-        /* Hub layout */
-        #hub-pane.active{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto 1fr;overflow:hidden;}
-        @media(max-width:900px){#hub-pane.active{grid-template-columns:1fr;}}
+/* ============================================================
+   BTRADERHUB — Clean Dark Theme (Deriv-inspired)
+   ============================================================ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:#1a1f2e;}
+::-webkit-scrollbar-thumb{background:#2d3748;border-radius:2px;}
+::-webkit-scrollbar-thumb:hover{background:#4a5568;}
+:root{
+    --bg:#0e1118;
+    --bg2:#161b27;
+    --bg3:#1e2534;
+    --card:#1e2534;
+    --border:#2d3748;
+    --text:#e2e8f0;
+    --muted:#718096;
+    --dim:#4a5568;
+    --pink:#ff444f;
+    --teal:#00d2c8;
+    --green:#00d79e;
+    --red:#ff444f;
+    --amber:#f6c343;
+    --blue:#4299e1;
+    --purple:#9f7aea;
+}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none;}
+::selection{background:#ff444f33;color:#fff;}
+
+/* ── Header ── */
+header{height:56px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 16px;flex-shrink:0;}
+.logo{font-size:18px;font-weight:900;letter-spacing:-.5px;}
+.logo span{color:var(--teal);}
+.header-right{display:flex;align-items:center;gap:10px;}
+.balance-badge{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;color:var(--teal);display:flex;align-items:center;gap:6px;}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--red);flex-shrink:0;}
+.status-dot.live{background:var(--green);}
+
+/* ── Nav ── */
+nav{height:44px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 12px;gap:2px;flex-shrink:0;overflow-x:auto;}
+.tab-btn{padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;white-space:nowrap;color:var(--muted);cursor:pointer;border:none;background:transparent;transition:all .15s;}
+.tab-btn:hover{background:var(--bg3);color:var(--text);}
+.tab-btn.active{background:var(--teal);color:#000;font-weight:700;}
+
+/* ── Main ── */
+main{flex:1;overflow:hidden;position:relative;}
+.tab-pane{display:none;height:100%;width:100%;overflow:hidden;}
+.tab-pane.active{display:flex;}
+.tab-pane.scroll{display:none;}
+.tab-pane.scroll.active{display:block;overflow-y:auto;height:100%;}
+
+/* ── Inputs/Select ── */
+input,select{background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:7px 10px;font-size:12px;outline:none;font-family:inherit;width:100%;transition:border-color .15s;}
+input:focus,select:focus{border-color:var(--teal);}
+select option{background:var(--bg2);}
+input::placeholder{color:var(--dim);}
+
+/* ── Buttons ── */
+.btn{border:none;border-radius:8px;font-weight:700;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-family:inherit;}
+.btn-teal{background:var(--teal);color:#000;}
+.btn-teal:hover{opacity:.9;transform:translateY(-1px);}
+.btn-red{background:var(--red);color:#fff;}
+.btn-red:hover{opacity:.9;}
+.btn-green{background:var(--green);color:#000;}
+.btn-green:hover{opacity:.9;}
+.btn-ghost{background:var(--bg3);color:var(--muted);border:1px solid var(--border);}
+.btn-ghost:hover{color:var(--text);border-color:var(--teal);}
+.btn-amber{background:var(--amber);color:#000;}
+.btn-run{background:var(--teal);color:#000;font-size:14px;font-weight:900;padding:14px 32px;border-radius:8px;letter-spacing:.03em;box-shadow:0 4px 20px #00d2c844;}
+.btn-run:hover{opacity:.9;transform:translateY(-1px);}
+.btn-stop{background:var(--red);color:#fff;font-size:14px;font-weight:900;padding:14px 32px;border-radius:8px;}
+
+/* ── Cards ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;}
+.card-sm{background:var(--bg2);border:1px solid var(--border);border-radius:8px;}
+
+/* ── Badge ── */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;}
+.badge-green{background:#00d79e18;color:var(--green);border:1px solid #00d79e33;}
+.badge-red{background:#ff444f18;color:var(--red);border:1px solid #ff444f33;}
+.badge-amber{background:#f6c34318;color:var(--amber);border:1px solid #f6c34333;}
+.badge-teal{background:#00d2c818;color:var(--teal);border:1px solid #00d2c833;}
+.badge-purple{background:#9f7aea18;color:var(--purple);border:1px solid #9f7aea33;}
+.badge-blue{background:#4299e118;color:var(--blue);border:1px solid #4299e133;}
+
+/* ── Separator ── */
+.sep{border:none;border-top:1px solid var(--border);}
+
+/* ── Sidebar ── */
+.sidebar{width:240px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+.sidebar-right{width:280px;flex-shrink:0;background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+
+/* ── Section header ── */
+.sec-head{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;padding:10px 14px 6px;}
+
+/* ── Bot bar ── */
+#bot-bar{position:fixed;bottom:0;left:0;right:0;z-index:999;background:var(--bg2);border-top:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;gap:12px;}
+body{padding-bottom:60px;}
+
+/* ── D-Circles ── */
+.d-circle{width:66px;height:66px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border:2px solid var(--border);background:var(--bg3);transition:all .2s;user-select:none;}
+.d-circle:hover{transform:scale(1.08);}
+.d-circle.r0{background:linear-gradient(135deg,#00d79e,#00a07a);border-color:#00d79e;color:#000;}
+.d-circle.r1{background:linear-gradient(135deg,#00d2c8,#008a84);border-color:#00d2c8;color:#000;}
+.d-circle.r8{background:linear-gradient(135deg,#f6c343,#c49a00);border-color:#f6c343;color:#000;}
+.d-circle.r9{background:linear-gradient(135deg,#ff444f,#c0001a);border-color:#ff444f;color:#fff;}
+.d-circle.pred{box-shadow:0 0 0 3px var(--teal),0 0 16px #00d2c844;}
+
+/* ── Transaction rows (like screenshot) ── */
+.tx-row{display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border);gap:12px;font-size:12px;transition:background .15s;}
+.tx-row:hover{background:var(--bg3);}
+.tx-type-icon{width:44px;height:44px;border-radius:8px;background:var(--bg3);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px;}
+.tx-spots{flex:1;}
+.tx-entry{display:flex;align-items:center;gap:6px;margin-bottom:4px;}
+.tx-exit{display:flex;align-items:center;gap:6px;}
+.spot-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.spot-dot.entry{background:var(--red);}
+.spot-dot.exit{background:transparent;border:2px solid var(--muted);}
+.tx-price{color:var(--text);font-family:monospace;font-weight:600;}
+.tx-pnl{text-align:right;}
+.tx-stake{color:var(--muted);font-size:11px;}
+.tx-profit{color:var(--green);font-weight:700;font-size:13px;}
+.tx-profit.loss{color:var(--red);}
+
+/* ── Summary bottom bar (like screenshot) ── */
+.summary-bar{background:var(--bg2);border-top:1px solid var(--border);padding:14px 16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;flex-shrink:0;}
+.summary-item{text-align:center;}
+.summary-label{font-size:10px;color:var(--muted);margin-bottom:4px;font-weight:600;text-transform:uppercase;}
+.summary-value{font-size:15px;font-weight:900;}
+
+/* ── Panel tabs (Summary/Transactions/Journal) ── */
+.panel-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0;}
+.panel-tab{flex:1;padding:10px;text-align:center;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;border:none;background:transparent;border-bottom:2px solid transparent;transition:all .15s;}
+.panel-tab.active{color:var(--teal);border-bottom-color:var(--teal);}
+
+/* ── AI Scanner ── */
+.scanner-signal{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;transition:all .15s;}
+.scanner-signal.strong{border-color:var(--green);}
+.scanner-signal.medium{border-color:var(--amber);}
+
+/* ── Market selector ── */
+.market-item{padding:8px 12px;cursor:pointer;border-radius:6px;font-size:12px;font-weight:500;color:var(--muted);display:flex;align-items:center;gap:8px;transition:all .15s;border-left:3px solid transparent;}
+.market-item:hover{background:var(--bg3);color:var(--text);}
+.market-item.active{background:#00d2c810;color:var(--teal);border-left-color:var(--teal);}
+
+/* ── Progress bar ── */
+.pbar{height:4px;background:var(--border);border-radius:2px;overflow:hidden;}
+.pbar-fill{height:100%;border-radius:2px;transition:width .6s;}
+
+/* ── Notification ── */
+#notif-wrap{position:fixed;top:70px;right:14px;z-index:9999;display:flex;flex-direction:column;gap:8px;max-width:290px;pointer-events:none;}
+.notif{background:var(--bg3);border:1px solid var(--teal);border-radius:10px;padding:12px 14px;box-shadow:0 8px 24px #00000055;animation:nIn .3s ease;pointer-events:all;}
+.notif.err{border-color:var(--red);}
+.notif.warn{border-color:var(--amber);}
+@keyframes nIn{from{opacity:0;transform:translateX(20px);}to{opacity:1;transform:translateX(0);}}
+
+/* ── Journal line ── */
+.jline{font-size:10px;padding:2px 0;font-family:monospace;}
+.jline.w{color:var(--green);}
+.jline.l{color:var(--red);}
+.jline.i{color:var(--blue);}
+.jline.x{color:var(--amber);}
+.jline.d{color:var(--muted);}
+
+/* ── Dir button ── */
+.dir-btn{padding:6px 14px;border-radius:6px;font-size:11px;font-weight:700;border:1px solid var(--border);background:var(--bg);color:var(--muted);cursor:pointer;transition:all .15s;}
+.dir-btn.pos{border-color:var(--teal);background:#00d2c814;color:var(--teal);}
+.dir-btn.neg{border-color:var(--red);background:#ff444f14;color:var(--red);}
+
+/* ── Chart iframe ── */
+.chart-frame{flex:1;border:none;width:100%;min-height:0;display:block;}
+
+/* ── Iframe container ── */
+.iframe-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0;}
+
+@media(max-width:768px){.sidebar,.sidebar-right{display:none;}.sidebar-right{display:none;}}
     </style>
 </head>
 <body>
 
-<!-- NOTIFICATION CONTAINER -->
-<div id="notification-container"></div>
+<!-- Notifications -->
+<div id="notif-wrap"></div>
 
 <!-- ═══ HEADER ═══ -->
-<header style="background:#060c18;border-bottom:1px solid #1e293b;height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;flex-shrink:0;z-index:50;">
+<header>
     <div style="display:flex;align-items:center;gap:12px;">
-        <span style="font-size:17px;font-weight:900;letter-spacing:.05em;">B<span style="color:#00C853">traderhub</span></span>
-        <div style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;">
-            <span id="status-dot" style="width:8px;height:8px;border-radius:50%;background:#ef4444;display:inline-block;"></span>
-            <span id="status-text" style="color:#64748b;">OFFLINE</span>
+        <div class="logo">B<span>traderhub</span></div>
+        <div style="display:flex;align-items:center;gap:5px;">
+            <span class="status-dot" id="status-dot"></span>
+            <span id="status-text" style="font-size:11px;font-weight:700;color:var(--muted);">OFFLINE</span>
         </div>
     </div>
-    <div style="display:flex;align-items:center;gap:8px;">
-        <div id="account-switcher-wrap" style="display:none;align-items:center;gap:8px;">
-            <select id="account-switcher" onchange="switchAccount(this.value)" style="width:auto;font-size:11px;padding:4px 8px;"></select>
-            <div class="badge badge-green"><span id="account-balance" style="font-family:monospace;">0.00 USD</span></div>
+    <div class="header-right">
+        <div id="acct-wrap" style="display:none;align-items:center;gap:8px;">
+            <select id="acct-switcher" onchange="switchAccount(this.value)" style="width:auto;font-size:11px;padding:4px 8px;"></select>
+            <div class="balance-badge">💰 <span id="balance">0.00 USD</span></div>
         </div>
-        <button onclick="loginWithDeriv()" id="login-nav-btn" class="btn btn-blue" style="font-size:11px;padding:5px 14px;">Log in</button>
-        <button onclick="signUpWithDeriv()" id="signup-nav-btn" class="btn btn-ghost" style="font-size:11px;padding:5px 14px;">Sign up</button>
+        <button onclick="loginWithDeriv()" id="btn-login" class="btn btn-teal" style="font-size:12px;padding:6px 16px;">Log in</button>
+        <button onclick="signUpWithDeriv()" id="btn-signup" class="btn btn-ghost" style="font-size:12px;padding:6px 14px;">Sign up</button>
     </div>
 </header>
 
 <!-- ═══ NAV ═══ -->
-<nav style="background:#060c18;border-bottom:1px solid #1e293b;height:40px;display:flex;align-items:center;padding:0 8px;gap:2px;flex-shrink:0;overflow-x:auto;">
-    <button id="tab-btn-dashboard"    onclick="switchTab('dashboard')"    class="tab-btn active">📊 Dashboard</button>
-    <button id="tab-btn-trading-bots" onclick="switchTab('trading-bots')" class="tab-btn">🤖 Trading Bots</button>
-    <button id="tab-btn-bot-builder"  onclick="switchTab('bot-builder')"  class="tab-btn">⚙️ Bot Builder</button>
-    <button id="tab-btn-deriv-chart"  onclick="switchTab('deriv-chart')"  class="tab-btn">📈 Deriv Chart</button>
-    <button id="tab-btn-tv-chart"     onclick="switchTab('tv-chart')"     class="tab-btn">📉 TradingView</button>
-    <button id="tab-btn-hub"          onclick="switchTab('hub')"          class="tab-btn">🧠 AI Hub</button>
-    <button id="tab-btn-copy-trading" onclick="switchTab('copy-trading')" class="tab-btn">👥 Copy Trading</button>
+<nav>
+    <button id="tab-btn-dashboard" onclick="switchTab('dashboard')" class="tab-btn active">📊 Dashboard</button>
+    <button id="tab-btn-bot"       onclick="switchTab('bot')"       class="tab-btn">🤖 DBot</button>
+    <button id="tab-btn-chart"     onclick="switchTab('chart')"     class="tab-btn">📈 Chart</button>
+    <button id="tab-btn-digits"    onclick="switchTab('digits')"    class="tab-btn">0️⃣ D-Stats</button>
+    <button id="tab-btn-scanner"   onclick="switchTab('scanner')"   class="tab-btn">🧠 AI Scanner</button>
 </nav>
 
 <!-- ═══ MAIN ═══ -->
-<main style="flex:1;overflow:hidden;position:relative;">
+<main>
 
-    <!-- DASHBOARD -->
-    <div id="dashboard-pane" class="tab-pane active" style="padding:16px;">
-        <div style="max-width:700px;margin:0 auto;">
-            <div id="auth-card" class="card" style="padding:40px;text-align:center;margin-bottom:16px;">
-                <div style="width:64px;height:64px;border-radius:50%;background:#00C85318;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 16px;">🔐</div>
-                <h2 style="font-size:22px;font-weight:900;margin-bottom:8px;">Welcome to Btraderhub</h2>
-                <p style="color:#64748b;font-size:13px;margin-bottom:20px;">Connect your Deriv account to start professional automated trading.</p>
-                <button onclick="loginWithDeriv()" class="btn btn-green" style="width:100%;padding:12px;font-size:13px;border-radius:8px;margin-bottom:10px;">Connect My Deriv Account</button>
-                <button onclick="signUpWithDeriv()" class="btn btn-ghost" style="width:100%;padding:10px;font-size:13px;border-radius:8px;">New to Deriv? Create Free Account →</button>
-                <div id="connection-status" style="display:none;margin-top:12px;font-size:11px;padding:10px;border-radius:8px;border:1px solid #334155;color:#94a3b8;"></div>
+<!-- ── DASHBOARD ── -->
+<div id="dashboard-pane" class="tab-pane scroll active" style="padding:16px;">
+    <div style="max-width:680px;margin:0 auto;">
+
+        <!-- Auth card -->
+        <div id="auth-card" class="card" style="padding:40px;text-align:center;margin-bottom:16px;">
+            <div style="width:64px;height:64px;border-radius:50%;background:#00d2c818;border:2px solid var(--teal);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 16px;">💎</div>
+            <h2 style="font-size:22px;font-weight:900;margin-bottom:8px;">Welcome to Btraderhub</h2>
+            <p style="color:var(--muted);font-size:13px;margin-bottom:24px;">Connect your Deriv account to start AI-powered automated trading.</p>
+            <button onclick="loginWithDeriv()" class="btn btn-teal" style="width:100%;padding:14px;font-size:14px;border-radius:8px;margin-bottom:10px;">✨ Connect My Deriv Account</button>
+            <button onclick="signUpWithDeriv()" class="btn btn-ghost" style="width:100%;padding:12px;font-size:13px;border-radius:8px;">New to Deriv? Create Free Account →</button>
+            <div id="conn-status" style="display:none;margin-top:12px;font-size:11px;padding:10px;border-radius:8px;border:1px solid var(--border);color:var(--muted);"></div>
+        </div>
+
+        <!-- Post-login stats -->
+        <div id="dash-stats" style="display:none;">
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;">
+                <div class="card-sm" style="padding:12px;text-align:center;">
+                    <div style="font-size:9px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;font-weight:700;">Total Runs</div>
+                    <div id="ds-runs" style="font-size:22px;font-weight:900;">0</div>
+                </div>
+                <div class="card-sm" style="padding:12px;text-align:center;">
+                    <div style="font-size:9px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;font-weight:700;">Win Rate</div>
+                    <div id="ds-wr" style="font-size:22px;font-weight:900;color:var(--teal);">0%</div>
+                </div>
+                <div class="card-sm" style="padding:12px;text-align:center;">
+                    <div style="font-size:9px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;font-weight:700;">Profit/Loss</div>
+                    <div id="ds-pl" style="font-size:22px;font-weight:900;">$0.00</div>
+                </div>
+                <div class="card-sm" style="padding:12px;text-align:center;">
+                    <div style="font-size:9px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;font-weight:700;">Active Bot</div>
+                    <div id="ds-bot" style="font-size:11px;font-weight:900;color:var(--teal);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">None</div>
+                </div>
             </div>
-            <!-- Dashboard stats (post-login) -->
-            <div id="dashboard-stats" style="display:none;">
-                <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;">
-                    <div class="stat-pill"><div style="font-size:10px;color:#64748b;margin-bottom:2px;">Total Runs</div><div id="dash-runs" style="font-size:22px;font-weight:900;">0</div></div>
-                    <div class="stat-pill"><div style="font-size:10px;color:#64748b;margin-bottom:2px;">Win Rate</div><div id="dash-wr" style="font-size:22px;font-weight:900;color:#00C853;">0%</div></div>
-                    <div class="stat-pill"><div style="font-size:10px;color:#64748b;margin-bottom:2px;">Profit/Loss</div><div id="dash-pl" style="font-size:22px;font-weight:900;">$0.00</div></div>
-                    <div class="stat-pill"><div style="font-size:10px;color:#64748b;margin-bottom:2px;">Active Bot</div><div id="dash-bot" style="font-size:12px;font-weight:900;color:#00C853;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">None</div></div>
-                </div>
-                <div class="card" style="padding:14px;">
-                    <div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;">Recent Trades</div>
-                    <div id="recent-trades-list"><div style="font-size:11px;color:#475569;text-align:center;padding:16px;">No trades yet</div></div>
-                </div>
+            <div class="card" style="padding:14px;">
+                <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:10px;">Recent Trades</div>
+                <div id="recent-trades"><div style="font-size:11px;color:var(--dim);text-align:center;padding:16px;">No trades yet</div></div>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- TRADING BOTS -->
-    <div id="trading-bots-pane" class="tab-pane" style="padding:16px;">
-        <div style="max-width:760px;margin:0 auto;">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-                <h2 style="font-size:16px;font-weight:900;">🤖 Trading Bots</h2>
-                <div style="display:flex;gap:8px;">
-                    <label class="btn btn-ghost" style="font-size:11px;padding:5px 12px;cursor:pointer;">
-                        📥 Import XML <input type="file" accept=".xml,.json" onchange="importBot(event)" style="display:none;">
-                    </label>
-                    <button onclick="createNewBot()" class="btn btn-green" style="font-size:11px;padding:5px 12px;">+ New Bot</button>
-                </div>
+<!-- ── DBOT ── -->
+<div id="bot-pane" class="tab-pane" style="flex-direction:row;">
+
+    <!-- LEFT: Bot settings -->
+    <div class="sidebar">
+        <div class="sec-head">⚙️ Bot Settings</div>
+        <div style="padding:12px;display:flex;flex-direction:column;gap:10px;overflow-y:auto;flex:1;">
+
+            <!-- Active bot indicator -->
+            <div class="card-sm" style="padding:10px;">
+                <div style="font-size:9px;color:var(--muted);text-transform:uppercase;font-weight:700;margin-bottom:4px;">Active Bot</div>
+                <div id="active-bot-name" style="font-size:13px;font-weight:900;color:var(--teal);">Configure below</div>
             </div>
-            <div id="bot-repository" class="space-y-2"></div>
-        </div>
-    </div>
 
-    <!-- BOT BUILDER -->
-    <div id="bot-builder-pane" class="tab-pane">
-        <!-- Left sidebar -->
-        <div class="sidebar">
-            <div style="padding:10px 12px;border-bottom:1px solid #1e293b;font-size:10px;font-weight:900;color:#64748b;text-transform:uppercase;letter-spacing:.08em;">⚙️ Bot Configuration</div>
-            <div style="padding:10px 12px;border-bottom:1px solid #1e293b;">
-                <div style="font-size:9px;font-weight:700;color:#475569;text-transform:uppercase;margin-bottom:4px;">Loaded Bot</div>
-                <div id="builder-bot-name" style="font-size:13px;font-weight:900;color:#00C853;">No bot loaded</div>
-                <div style="font-size:9px;color:#475569;margin-top:2px;">Load from Trading Bots tab</div>
-            </div>
-            <div style="padding:12px;display:flex;flex-direction:column;gap:10px;">
-                <!-- Trade clarity bar -->
-                <div class="card-sm" style="padding:8px;">
-                    <div style="font-size:9px;color:#64748b;margin-bottom:4px;font-weight:700;text-transform:uppercase;">Active Trade Conditions</div>
-                    <div style="display:flex;flex-direction:column;gap:2px;font-size:10px;">
-                        <div style="display:flex;justify-content:space-between;"><span style="color:#475569;">Market</span><span id="info-market" style="font-weight:700;color:#e2e8f0;">—</span></div>
-                        <div style="display:flex;justify-content:space-between;"><span style="color:#475569;">Type</span><span id="info-type" style="font-weight:700;color:#e2e8f0;">—</span></div>
-                        <div style="display:flex;justify-content:space-between;"><span style="color:#475569;">Direction</span><span id="info-direction" style="font-weight:900;color:#00C853;">—</span></div>
-                        <div style="display:flex;justify-content:space-between;"><span style="color:#475569;">Account</span><span id="info-account" style="font-weight:700;color:#e2e8f0;">—</span></div>
-                    </div>
-                </div>
-
-                <div>
-                    <div style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:4px;">Market</div>
-                    <select id="bot-market" onchange="onBuilderChange()">
-                        <optgroup label="Continuous Indices">
-                            <option value="R_10">Volatility 10</option><option value="R_25">Volatility 25</option>
-                            <option value="R_50">Volatility 50</option><option value="R_75">Volatility 75</option><option value="R_100">Volatility 100</option>
-                        </optgroup>
-                        <optgroup label="1s Indices">
-                            <option value="1HZ10V">Volatility 10 (1s)</option><option value="1HZ25V">Volatility 25 (1s)</option>
-                            <option value="1HZ50V">Volatility 50 (1s)</option><option value="1HZ75V">Volatility 75 (1s)</option><option value="1HZ100V">Volatility 100 (1s)</option>
-                        </optgroup>
-                        <optgroup label="Jump Indices">
-                            <option value="JD10">Jump 10</option><option value="JD25">Jump 25</option>
-                            <option value="JD50">Jump 50</option><option value="JD75">Jump 75</option><option value="JD100">Jump 100</option>
-                        </optgroup>
-                    </select>
-                </div>
-
-                <div>
-                    <div style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:4px;">Trade Type</div>
-                    <select id="bot-trade-type" onchange="onTradeTypeChange()">
-                        <option value="over_under">Over / Under</option>
-                        <option value="even_odd">Even / Odd</option>
-                        <option value="rise_fall">Rise / Fall</option>
-                        <option value="only_ups_downs">Only Ups / Only Downs</option>
-                        <option value="high_low_ticks">High / Low Ticks</option>
-                        <option value="accumulator">Accumulator</option>
-                    </select>
-                </div>
-
-                <div>
-                    <div style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:6px;">Direction <span style="color:#ef4444;">*required</span></div>
-                    <div id="direction-controls" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
-                </div>
-
-                <div id="prediction-wrap">
-                    <div style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:4px;">Prediction Digit (0–9)</div>
-                    <input type="number" id="bot-prediction" value="1" min="0" max="9">
-                </div>
-
-                <div id="accu-panel" style="display:none;" class="card-sm" style="padding:8px;">
-                    <div style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:4px;">Growth Rate</div>
-                    <select id="bot-growth-rate"><option value="0.01">1%</option><option value="0.02">2%</option><option value="0.03" selected>3%</option><option value="0.04">4%</option><option value="0.05">5%</option></select>
-                </div>
-
-                <div>
-                    <div style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:4px;">Duration (Ticks)</div>
-                    <input type="number" id="bot-duration" value="1" min="1" max="10">
-                </div>
-
-                <hr style="border:none;border-top:1px solid #1e293b;">
-
-                <div style="font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase;letter-spacing:.06em;">💰 Money Management</div>
-
-                <div>
-                    <div style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:4px;">Initial Stake (USD)</div>
-                    <input type="number" id="bot-stake" value="1.00" step="0.50" min="0.35">
-                </div>
-                <div>
-                    <div style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:4px;">Martingale ×</div>
-                    <input type="number" id="bot-martingale" value="2.1" step="0.1" min="1">
-                </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                    <div>
-                        <div style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:4px;">Take Profit</div>
-                        <input type="number" id="bot-tp" value="50.00" style="color:#00C853;">
-                    </div>
-                    <div>
-                        <div style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:4px;">Stop Loss</div>
-                        <input type="number" id="bot-sl" value="100.00" style="color:#ef4444;">
-                    </div>
-                </div>
-                <button onclick="saveBotConfig()" class="btn btn-blue" style="width:100%;padding:8px;font-size:11px;border-radius:7px;">💾 Save Configuration</button>
-            </div>
-        </div>
-
-        <!-- Center chart -->
-        <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;background:#0a0f1e;">
-            <div style="height:36px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;background:#060c18;border-bottom:1px solid #1e293b;flex-shrink:0;">
-                <span style="font-size:11px;font-weight:700;color:#00C853;">📈 Live Deriv Chart</span>
-                <span id="chart-asset-ticker" class="badge badge-blue">R_10</span>
-            </div>
-            <iframe id="deriv-chart-frame" src="https://charts.deriv.com/?symbol=R_10&granularity=60" style="flex:1;border:none;" allowfullscreen></iframe>
-        </div>
-
-        <!-- Right sidebar -->
-        <div class="sidebar-right">
-            <!-- Stats -->
-            <div style="padding:8px;border-bottom:1px solid #1e293b;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
-                <div class="stat-pill"><div style="font-size:9px;color:#64748b;">Runs</div><div id="stat-runs" style="font-size:14px;font-weight:900;">0</div></div>
-                <div class="stat-pill"><div style="font-size:9px;color:#64748b;">Stake</div><div id="stat-stake" style="font-size:14px;font-weight:900;">0.00</div></div>
-                <div class="stat-pill"><div style="font-size:9px;color:#64748b;">P/L</div><div id="stat-profit" style="font-size:14px;font-weight:900;">0.00</div></div>
-                <div class="stat-pill"><div style="font-size:9px;color:#64748b;">Win%</div><div id="stat-win-rate" style="font-size:14px;font-weight:900;">0%</div></div>
-                <div class="stat-pill"><div style="font-size:9px;color:#64748b;">Peak</div><div id="stat-peak-exposure" style="font-size:14px;font-weight:900;">0.00</div></div>
-                <div class="stat-pill"><div style="font-size:9px;color:#64748b;">Streak</div><div id="stat-current-streak" style="font-size:14px;font-weight:900;">0</div></div>
-            </div>
-            <!-- Transactions -->
-            <div style="padding:6px 8px;font-size:9px;font-weight:900;color:#475569;text-transform:uppercase;border-bottom:1px solid #1e293b;">📜 Transactions</div>
-            <div id="transaction-rows-container" style="flex:1;overflow-y:auto;padding:6px;">
-                <div id="empty-rows-msg" style="font-size:11px;color:#475569;text-align:center;padding:20px;">No trades yet</div>
-            </div>
-            <!-- Journal -->
-            <div style="height:120px;border-top:1px solid #1e293b;display:flex;flex-direction:column;background:#040810;flex-shrink:0;">
-                <div style="font-size:9px;color:#334155;text-transform:uppercase;font-weight:700;padding:4px 8px;border-bottom:1px solid #0f172a;">Activity Log</div>
-                <div id="journal-terminal-log" style="flex:1;overflow-y:auto;padding:6px;display:flex;flex-direction:column;gap:1px;"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- DERIV CHART -->
-    <div id="deriv-chart-pane" class="tab-pane">
-        <div style="display:flex;flex-direction:column;height:100%;width:100%;">
-            <div style="height:40px;display:flex;align-items:center;gap:10px;padding:0 12px;background:#060c18;border-bottom:1px solid #1e293b;flex-shrink:0;">
-                <span style="font-size:11px;font-weight:700;color:#00C853;">📈 Deriv Chart</span>
-                <select id="deriv-chart-market" onchange="loadDerivChart(this.value)" style="width:200px;font-size:11px;">
-                    <optgroup label="Continuous"><option value="R_10">Volatility 10</option><option value="R_25">Volatility 25</option><option value="R_50">Volatility 50</option><option value="R_75">Volatility 75</option><option value="R_100">Volatility 100</option></optgroup>
-                    <optgroup label="1s"><option value="1HZ10V">V10 (1s)</option><option value="1HZ25V">V25 (1s)</option><option value="1HZ50V">V50 (1s)</option><option value="1HZ75V">V75 (1s)</option><option value="1HZ100V">V100 (1s)</option></optgroup>
-                    <optgroup label="Jump"><option value="JD10">Jump 10</option><option value="JD25">Jump 25</option><option value="JD50">Jump 50</option><option value="JD75">Jump 75</option><option value="JD100">Jump 100</option></optgroup>
+            <div>
+                <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px;">Market</div>
+                <select id="bot-market" onchange="onMarketChange()">
+                    <optgroup label="Continuous Indices">
+                        <option value="R_10">Volatility 10 Index</option>
+                        <option value="R_25">Volatility 25 Index</option>
+                        <option value="R_50">Volatility 50 Index</option>
+                        <option value="R_75">Volatility 75 Index</option>
+                        <option value="R_100">Volatility 100 Index</option>
+                    </optgroup>
+                    <optgroup label="1s Indices">
+                        <option value="1HZ10V">Volatility 10 (1s)</option>
+                        <option value="1HZ25V">Volatility 25 (1s)</option>
+                        <option value="1HZ50V">Volatility 50 (1s)</option>
+                        <option value="1HZ75V">Volatility 75 (1s)</option>
+                        <option value="1HZ100V">Volatility 100 (1s)</option>
+                    </optgroup>
+                    <optgroup label="Jump Indices">
+                        <option value="JD10">Jump 10 Index</option>
+                        <option value="JD25">Jump 25 Index</option>
+                        <option value="JD50">Jump 50 Index</option>
+                        <option value="JD75">Jump 75 Index</option>
+                        <option value="JD100">Jump 100 Index</option>
+                    </optgroup>
                 </select>
             </div>
-            <iframe id="deriv-standalone-frame" src="https://charts.deriv.com/?symbol=R_10&granularity=60" allowfullscreen></iframe>
+
+            <div>
+                <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px;">Trade Type</div>
+                <select id="bot-type" onchange="onTypeChange()">
+                    <option value="over_under">Over / Under</option>
+                    <option value="even_odd">Even / Odd</option>
+                    <option value="rise_fall">Rise / Fall</option>
+                    <option value="only_ups_downs">Only Ups / Only Downs</option>
+                </select>
+            </div>
+
+            <div>
+                <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:6px;">Direction <span style="color:var(--red);">*</span></div>
+                <div id="dir-controls" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+            </div>
+
+            <div id="pred-wrap">
+                <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px;">Prediction (0–9)</div>
+                <input type="number" id="bot-pred" value="5" min="0" max="9">
+            </div>
+
+            <div>
+                <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px;">Duration (Ticks)</div>
+                <input type="number" id="bot-dur" value="1" min="1" max="10">
+            </div>
+
+            <hr class="sep">
+            <div style="font-size:9px;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">💰 Money Management</div>
+
+            <div>
+                <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px;">Initial Stake (USD)</div>
+                <input type="number" id="bot-stake" value="1.00" step="0.50" min="0.35">
+            </div>
+
+            <div>
+                <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px;">Martingale ×</div>
+                <input type="number" id="bot-mg" value="2.1" step="0.1" min="1">
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                <div>
+                    <div style="font-size:9px;font-weight:700;color:var(--green);text-transform:uppercase;margin-bottom:4px;">Take Profit $</div>
+                    <input type="number" id="bot-tp" value="20.00" style="color:var(--green);">
+                </div>
+                <div>
+                    <div style="font-size:9px;font-weight:700;color:var(--red);text-transform:uppercase;margin-bottom:4px;">Stop Loss $</div>
+                    <input type="number" id="bot-sl" value="10.00" style="color:var(--red);">
+                </div>
+            </div>
+
+            <!-- AI auto-update toggle -->
+            <div class="card-sm" style="padding:10px;border-color:var(--teal);">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                    <span style="font-size:11px;font-weight:700;color:var(--teal);">🧠 AI Auto-Update</span>
+                    <label style="position:relative;width:36px;height:20px;cursor:pointer;">
+                        <input type="checkbox" id="ai-auto" checked style="opacity:0;width:0;height:0;">
+                        <span id="ai-toggle-track" onclick="toggleAIAuto()" style="position:absolute;inset:0;background:var(--teal);border-radius:20px;transition:.3s;cursor:pointer;"></span>
+                        <span id="ai-toggle-thumb" onclick="toggleAIAuto()" style="position:absolute;left:3px;top:3px;width:14px;height:14px;background:#000;border-radius:50%;transition:.3s;cursor:pointer;"></span>
+                    </label>
+                </div>
+                <div style="font-size:10px;color:var(--muted);">AI scans market and updates bot direction automatically for highest win probability.</div>
+            </div>
+
+            <button onclick="runAIScan()" class="btn btn-amber" style="width:100%;padding:8px;font-size:11px;border-radius:7px;">🔍 Run AI Scan Now</button>
         </div>
     </div>
 
-    <!-- TRADINGVIEW CHART -->
-    <div id="tv-chart-pane" class="tab-pane">
-        <div style="display:flex;flex-direction:column;height:100%;width:100%;">
-            <div style="height:40px;display:flex;align-items:center;gap:10px;padding:0 12px;background:#060c18;border-bottom:1px solid #1e293b;flex-shrink:0;">
-                <span style="font-size:11px;font-weight:700;color:#60a5fa;">📉 TradingView</span>
-                <span class="badge badge-blue">PRO TERMINAL</span>
-            </div>
-            <div id="tv-chart-container" style="flex:1;width:100%;"></div>
-        </div>
-    </div>
+    <!-- CENTER: Run panel + transaction view -->
+    <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;">
 
-    <!-- AI MARKET INTELLIGENCE HUB (replaces D-Stats + Scanner) -->
-    <div id="hub-pane" class="tab-pane" style="display:none;overflow:hidden;">
-        <!-- Top: Market selector + stats bar -->
-        <div style="background:#060c18;border-bottom:1px solid #1e293b;padding:8px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;flex-shrink:0;">
-            <span style="font-size:12px;font-weight:900;color:#00C853;">🧠 AI Market Intelligence Hub</span>
-            <select id="hub-market-select" onchange="onHubMarketChange(this.value)" style="width:200px;font-size:11px;">
-                <optgroup label="Continuous"><option value="R_10">Volatility 10</option><option value="R_25">Volatility 25</option><option value="R_50">Volatility 50</option><option value="R_75">Volatility 75</option><option value="R_100">Volatility 100</option></optgroup>
-                <optgroup label="1s"><option value="1HZ10V">V10 (1s)</option><option value="1HZ25V">V25 (1s)</option><option value="1HZ50V">V50 (1s)</option><option value="1HZ75V">V75 (1s)</option><option value="1HZ100V">V100 (1s)</option></optgroup>
-                <optgroup label="Jump"><option value="JD10">Jump 10</option><option value="JD25">Jump 25</option><option value="JD50">Jump 50</option><option value="JD75">Jump 75</option><option value="JD100">Jump 100</option></optgroup>
-            </select>
-            <div style="display:flex;gap:8px;align-items:center;font-size:10px;flex-wrap:wrap;">
-                <span style="color:#64748b;">Ticks: <span id="hub-tick-count" style="color:#e2e8f0;font-weight:700;font-family:monospace;">0</span></span>
-                <span style="color:#64748b;">Last: <span id="hub-last-digit" style="color:#00C853;font-weight:900;font-size:14px;font-family:monospace;">—</span></span>
-                <span class="badge badge-green" id="hub-even-badge">Even 0%</span>
-                <span class="badge badge-red" id="hub-odd-badge">Odd 0%</span>
-                <span class="badge badge-blue" id="hub-over-badge">Over 0%</span>
-                <span class="badge badge-amber" id="hub-under-badge">Under 0%</span>
-            </div>
-            <button onclick="runFullScan()" class="btn btn-amber" style="font-size:10px;padding:4px 12px;margin-left:auto;">🔍 Scan All Markets</button>
+        <!-- Trade info bar -->
+        <div style="padding:10px 14px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px;flex-shrink:0;flex-wrap:wrap;">
+            <div style="font-size:11px;color:var(--muted);">Market: <b id="info-market" style="color:var(--text);">—</b></div>
+            <div style="font-size:11px;color:var(--muted);">Type: <b id="info-type" style="color:var(--text);">—</b></div>
+            <div style="font-size:11px;color:var(--muted);">Direction: <b id="info-dir" style="color:var(--teal);">—</b></div>
+            <div style="font-size:11px;color:var(--muted);">Stake: <b id="info-stake" style="color:var(--text);">$1.00</b></div>
+            <div id="ai-status-badge" style="margin-left:auto;" class="badge badge-teal">🧠 AI Active</div>
         </div>
 
-        <!-- Main content: left = digits, right = scanner signals -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;flex:1;overflow:hidden;gap:0;">
+        <!-- Panel tabs (Summary / Transactions / Journal) — like screenshot -->
+        <div class="panel-tabs">
+            <button class="panel-tab active" onclick="switchPanel('summary',this)">Summary</button>
+            <button class="panel-tab" onclick="switchPanel('transactions',this)">Transactions</button>
+            <button class="panel-tab" onclick="switchPanel('journal',this)">Journal</button>
+        </div>
 
-            <!-- Left: Digit stats -->
-            <div style="overflow-y:auto;padding:16px;border-right:1px solid #1e293b;">
-                <div style="font-size:11px;font-weight:900;color:#e2e8f0;margin-bottom:12px;">📊 Real-Time Digit Distribution</div>
-
-                <!-- Stat pills row -->
-                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;">
-                    <div class="card-sm" style="padding:8px;text-align:center;">
-                        <div style="font-size:9px;color:#64748b;margin-bottom:4px;">Hot Digit</div>
-                        <div id="hub-hot" style="font-size:22px;font-weight:900;color:#00C853;">—</div>
+        <!-- SUMMARY panel -->
+        <div id="panel-summary" style="flex:1;overflow-y:auto;padding:16px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+                <div class="card-sm" style="padding:12px;">
+                    <div style="font-size:9px;color:var(--muted);text-transform:uppercase;font-weight:700;margin-bottom:6px;">Win Rate</div>
+                    <div id="sum-wr" style="font-size:28px;font-weight:900;color:var(--teal);">0%</div>
+                    <div class="pbar" style="margin-top:8px;"><div id="sum-wr-bar" class="pbar-fill" style="width:0%;background:var(--teal);"></div></div>
+                </div>
+                <div class="card-sm" style="padding:12px;">
+                    <div style="font-size:9px;color:var(--muted);text-transform:uppercase;font-weight:700;margin-bottom:6px;">Total Profit/Loss</div>
+                    <div id="sum-pl" style="font-size:28px;font-weight:900;">$0.00</div>
+                </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;">
+                <div class="card-sm" style="padding:10px;text-align:center;">
+                    <div style="font-size:9px;color:var(--muted);font-weight:700;margin-bottom:4px;">Runs</div>
+                    <div id="sum-runs" style="font-size:20px;font-weight:900;">0</div>
+                </div>
+                <div class="card-sm" style="padding:10px;text-align:center;">
+                    <div style="font-size:9px;color:var(--green);font-weight:700;margin-bottom:4px;">Contracts Won</div>
+                    <div id="sum-wins" style="font-size:20px;font-weight:900;color:var(--green);">0</div>
+                </div>
+                <div class="card-sm" style="padding:10px;text-align:center;">
+                    <div style="font-size:9px;color:var(--red);font-weight:700;margin-bottom:4px;">Contracts Lost</div>
+                    <div id="sum-losses" style="font-size:20px;font-weight:900;color:var(--red);">0</div>
+                </div>
+            </div>
+            <!-- Summary bottom bar like screenshot -->
+            <div class="card" style="overflow:hidden;">
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;text-align:center;border-bottom:1px solid var(--border);">
+                    <div style="padding:12px;border-right:1px solid var(--border);">
+                        <div style="font-size:9px;color:var(--muted);font-weight:700;margin-bottom:4px;">TOTAL STAKE</div>
+                        <div id="sum-total-stake" style="font-size:15px;font-weight:900;">$0.00</div>
                     </div>
-                    <div class="card-sm" style="padding:8px;text-align:center;">
-                        <div style="font-size:9px;color:#64748b;margin-bottom:4px;">Cold Digit</div>
-                        <div id="hub-cold" style="font-size:22px;font-weight:900;color:#ef4444;">—</div>
+                    <div style="padding:12px;border-right:1px solid var(--border);">
+                        <div style="font-size:9px;color:var(--muted);font-weight:700;margin-bottom:4px;">TOTAL PAYOUT</div>
+                        <div id="sum-total-payout" style="font-size:15px;font-weight:900;color:var(--green);">$0.00</div>
                     </div>
-                    <div class="card-sm" style="padding:8px;text-align:center;">
-                        <div style="font-size:9px;color:#64748b;margin-bottom:4px;">Consecutive</div>
-                        <div id="hub-consec" style="font-size:18px;font-weight:900;color:#60a5fa;">0</div>
+                    <div style="padding:12px;">
+                        <div style="font-size:9px;color:var(--muted);font-weight:700;margin-bottom:4px;">NO. OF RUNS</div>
+                        <div id="sum-no-runs" style="font-size:15px;font-weight:900;">0</div>
                     </div>
                 </div>
-
-                <!-- Digit circles -->
-                <div id="hub-digit-circles" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;"></div>
-
-                <!-- Digit bars -->
-                <div id="hub-digit-bars" style="display:flex;flex-direction:column;gap:6px;"></div>
-            </div>
-
-            <!-- Right: AI Scanner signals -->
-            <div style="overflow-y:auto;padding:16px;">
-                <div style="font-size:11px;font-weight:900;color:#e2e8f0;margin-bottom:12px;">🧠 AI Signal Intelligence</div>
-
-                <!-- Current market signal -->
-                <div id="hub-current-signal" class="card-sm" style="padding:12px;margin-bottom:12px;"></div>
-
-                <!-- All market scan results -->
-                <div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:8px;">All Markets Scan</div>
-                <div id="hub-scan-results" style="display:flex;flex-direction:column;gap:6px;">
-                    <div style="font-size:11px;color:#475569;text-align:center;padding:20px;">Click "Scan All Markets" to analyse</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;text-align:center;">
+                    <div style="padding:12px;border-right:1px solid var(--border);">
+                        <div style="font-size:9px;color:var(--muted);font-weight:700;margin-bottom:4px;">CONTRACTS WON</div>
+                        <div id="sum-won2" style="font-size:18px;font-weight:900;color:var(--green);">0</div>
+                    </div>
+                    <div style="padding:12px;">
+                        <div style="font-size:9px;color:var(--green);font-weight:700;margin-bottom:4px;">TOTAL PROFIT/LOSS</div>
+                        <div id="sum-pl2" style="font-size:18px;font-weight:900;color:var(--green);">$0.00</div>
+                    </div>
                 </div>
+            </div>
+        </div>
 
-                <!-- Notification log -->
-                <div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;margin-top:14px;margin-bottom:8px;">Signal History</div>
-                <div id="hub-signal-log" style="display:flex;flex-direction:column;gap:4px;max-height:200px;overflow-y:auto;"></div>
+        <!-- TRANSACTIONS panel (like screenshot) -->
+        <div id="panel-transactions" style="display:none;flex-direction:column;height:100%;overflow:hidden;">
+            <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:8px;flex-shrink:0;">
+                <button onclick="downloadTransactions()" class="btn btn-ghost" style="font-size:11px;padding:5px 12px;">⬇ Download</button>
+                <button onclick="clearTransactions()" class="btn btn-ghost" style="font-size:11px;padding:5px 12px;">🗑 Reset</button>
+            </div>
+            <!-- Column headers -->
+            <div style="display:flex;padding:8px 16px;border-bottom:1px solid var(--border);font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;flex-shrink:0;">
+                <div style="width:56px;">Type</div>
+                <div style="flex:1;">Entry / Exit Spot</div>
+                <div style="width:140px;text-align:right;">Buy Price and P/L</div>
+            </div>
+            <div id="tx-list" style="flex:1;overflow-y:auto;">
+                <div style="font-size:11px;color:var(--dim);text-align:center;padding:30px;">No transactions yet. Run the bot to see trades here.</div>
+            </div>
+        </div>
+
+        <!-- JOURNAL panel -->
+        <div id="panel-journal" style="display:none;flex-direction:column;height:100%;overflow:hidden;">
+            <div style="padding:8px 14px;border-bottom:1px solid var(--border);display:flex;gap:8px;flex-shrink:0;">
+                <button onclick="clearJournal()" class="btn btn-ghost" style="font-size:11px;padding:5px 12px;">🗑 Clear</button>
+            </div>
+            <div id="journal-log" style="flex:1;overflow-y:auto;padding:10px 14px;display:flex;flex-direction:column;gap:2px;background:var(--bg);font-family:monospace;font-size:11px;">
+                <div class="jline d">[System] Btraderhub ready.</div>
             </div>
         </div>
     </div>
 
-    <!-- COPY TRADING -->
-    <div id="copy-trading-pane" class="tab-pane" style="padding:16px;">
-        <div style="max-width:600px;margin:0 auto;">
-            <h2 style="font-size:16px;font-weight:900;margin-bottom:14px;">👥 Mirror Trading</h2>
-            <div class="card" style="padding:16px;margin-bottom:14px;display:flex;flex-direction:column;gap:10px;">
-                <div><div style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:4px;">Slave API Token</div><input id="slave-token-input" placeholder="Enter slave account API token"></div>
-                <div><div style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:4px;">Stake Multiplier</div><input id="slave-multiplier-input" type="number" value="1.0" step="0.1"></div>
-                <button onclick="addNewSlave()" class="btn btn-green" style="padding:8px;font-size:12px;border-radius:7px;">+ Add Slave Account</button>
+    <!-- RIGHT: AI analysis sidebar -->
+    <div class="sidebar-right">
+        <div class="sec-head">🧠 AI Market Analysis</div>
+        <div style="padding:10px;flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;">
+
+            <!-- AI confidence meter -->
+            <div class="card-sm" style="padding:12px;">
+                <div style="font-size:10px;font-weight:700;color:var(--teal);margin-bottom:8px;">AI Win Probability</div>
+                <div id="ai-confidence-val" style="font-size:32px;font-weight:900;color:var(--teal);text-align:center;margin-bottom:8px;">—%</div>
+                <div class="pbar"><div id="ai-conf-bar" class="pbar-fill" style="width:0%;background:var(--teal);"></div></div>
+                <div id="ai-conf-label" style="font-size:10px;color:var(--muted);text-align:center;margin-top:6px;">Connect to analyze</div>
             </div>
-            <div id="slave-list-container"><p style="font-size:11px;color:#475569;text-align:center;padding:16px;">No slave accounts added.</p></div>
+
+            <!-- AI signal -->
+            <div class="card-sm" style="padding:12px;" id="ai-signal-box">
+                <div style="font-size:10px;font-weight:700;color:var(--muted);margin-bottom:6px;">Current Signal</div>
+                <div id="ai-signal-text" style="font-size:13px;font-weight:900;color:var(--muted);">No signal yet</div>
+                <div id="ai-signal-detail" style="font-size:10px;color:var(--muted);margin-top:4px;"></div>
+            </div>
+
+            <!-- Market state -->
+            <div class="card-sm" style="padding:12px;">
+                <div style="font-size:10px;font-weight:700;color:var(--muted);margin-bottom:6px;">Market State</div>
+                <div id="ai-market-state" style="font-size:12px;font-weight:700;color:var(--text);">Analyzing...</div>
+                <div id="ai-market-detail" style="font-size:10px;color:var(--muted);margin-top:4px;"></div>
+            </div>
+
+            <!-- Digit distribution mini -->
+            <div class="card-sm" style="padding:12px;">
+                <div style="font-size:10px;font-weight:700;color:var(--muted);margin-bottom:8px;">Digit Distribution</div>
+                <div id="ai-digit-mini" style="display:flex;flex-wrap:wrap;gap:4px;"></div>
+            </div>
+
+            <!-- Last 5 AI signals log -->
+            <div>
+                <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:6px;">Signal History</div>
+                <div id="ai-signal-history" style="display:flex;flex-direction:column;gap:4px;"></div>
+            </div>
         </div>
     </div>
+</div>
+
+<!-- ── CHART ── -->
+<div id="chart-pane" class="tab-pane" style="flex-direction:column;">
+    <div style="height:42px;display:flex;align-items:center;gap:10px;padding:0 14px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;">
+        <span style="font-size:11px;font-weight:700;color:var(--teal);">📈 Live Chart</span>
+        <select id="chart-market-sel" onchange="loadChart(this.value)" style="width:200px;font-size:11px;">
+            <optgroup label="Continuous"><option value="R_10">Volatility 10</option><option value="R_25">Volatility 25</option><option value="R_50">Volatility 50</option><option value="R_75">Volatility 75</option><option value="R_100">Volatility 100</option></optgroup>
+            <optgroup label="1s Indices"><option value="1HZ10V">V10 (1s)</option><option value="1HZ25V">V25 (1s)</option><option value="1HZ50V">V50 (1s)</option><option value="1HZ75V">V75 (1s)</option><option value="1HZ100V">V100 (1s)</option></optgroup>
+            <optgroup label="Jump"><option value="JD10">Jump 10</option><option value="JD25">Jump 25</option><option value="JD50">Jump 50</option><option value="JD75">Jump 75</option><option value="JD100">Jump 100</option></optgroup>
+        </select>
+    </div>
+    <iframe id="chart-frame" src="https://charts.deriv.com/?symbol=R_10&granularity=60" class="chart-frame" allowfullscreen></iframe>
+</div>
+
+<!-- ── D-STATS ── -->
+<div id="digits-pane" class="tab-pane scroll" style="padding:16px;">
+    <div style="max-width:700px;margin:0 auto;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+            <div>
+                <h2 style="font-size:16px;font-weight:900;">0️⃣ Digit Statistics</h2>
+                <p style="font-size:11px;color:var(--muted);margin-top:2px;">Live last-digit distribution from real Deriv tick data. Click a digit to set as prediction.</p>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                <select id="digit-market" onchange="changeDigitMarket(this.value)" style="width:180px;font-size:11px;">
+                    <optgroup label="Continuous"><option value="R_10">Volatility 10</option><option value="R_25">Volatility 25</option><option value="R_50">Volatility 50</option><option value="R_75">Volatility 75</option><option value="R_100">Volatility 100</option></optgroup>
+                    <optgroup label="1s Indices"><option value="1HZ10V">V10 (1s)</option><option value="1HZ25V">V25 (1s)</option><option value="1HZ50V">V50 (1s)</option><option value="1HZ75V">V75 (1s)</option><option value="1HZ100V">V100 (1s)</option></optgroup>
+                    <optgroup label="Jump"><option value="JD10">Jump 10</option><option value="JD25">Jump 25</option><option value="JD50">Jump 50</option><option value="JD75">Jump 75</option><option value="JD100">Jump 100</option></optgroup>
+                </select>
+                <span class="badge badge-teal">Ticks: <span id="d-ticks">0</span></span>
+                <span class="badge badge-blue">Last: <span id="d-last" style="font-family:monospace;font-weight:900;">—</span></span>
+            </div>
+        </div>
+
+        <!-- Stats pills -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;">
+            <div class="card-sm" style="padding:10px;text-align:center;">
+                <div style="font-size:9px;color:var(--muted);margin-bottom:4px;">Hot Digit</div>
+                <div id="d-hot" style="font-size:22px;font-weight:900;color:var(--green);">—</div>
+            </div>
+            <div class="card-sm" style="padding:10px;text-align:center;">
+                <div style="font-size:9px;color:var(--muted);margin-bottom:4px;">Cold Digit</div>
+                <div id="d-cold" style="font-size:22px;font-weight:900;color:var(--red);">—</div>
+            </div>
+            <div class="card-sm" style="padding:10px;text-align:center;">
+                <div style="font-size:9px;color:var(--green);margin-bottom:4px;">Even %</div>
+                <div id="d-even" style="font-size:18px;font-weight:900;">—</div>
+            </div>
+            <div class="card-sm" style="padding:10px;text-align:center;">
+                <div style="font-size:9px;color:var(--teal);margin-bottom:4px;">Over 4 %</div>
+                <div id="d-over" style="font-size:18px;font-weight:900;">—</div>
+            </div>
+        </div>
+
+        <!-- Circles -->
+        <div id="d-circles" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px;"></div>
+
+        <!-- Bars -->
+        <div id="d-bars" style="display:flex;flex-direction:column;gap:6px;"></div>
+    </div>
+</div>
+
+<!-- ── AI SCANNER ── -->
+<div id="scanner-pane" class="tab-pane scroll" style="padding:16px;">
+    <div style="max-width:780px;margin:0 auto;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+            <div>
+                <h2 style="font-size:16px;font-weight:900;">🧠 AI Market Scanner</h2>
+                <p style="font-size:11px;color:var(--muted);margin-top:2px;">Real-time market analysis. Signals based on actual Deriv tick data — no guessing.</p>
+            </div>
+            <button onclick="runFullScan()" class="btn btn-amber" style="font-size:12px;padding:8px 20px;">🔍 Scan All Markets</button>
+        </div>
+
+        <!-- Best opportunity highlight -->
+        <div id="best-signal-box" class="card" style="padding:16px;margin-bottom:14px;border-color:var(--teal);">
+            <div style="font-size:10px;font-weight:700;color:var(--teal);text-transform:uppercase;margin-bottom:8px;">🥇 Best Opportunity Right Now</div>
+            <div id="best-signal-content" style="font-size:12px;color:var(--muted);">Click "Scan All Markets" to find the best trading opportunity.</div>
+        </div>
+
+        <!-- All market results -->
+        <div id="scan-results" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;"></div>
+    </div>
+</div>
 
 </main>
 
-<!-- ═══ GLOBAL BOT BAR ═══ -->
-<div id="global-bot-bar">
-    <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
-        <div style="display:flex;align-items:center;gap:5px;">
-            <span id="bar-status-dot" style="width:7px;height:7px;border-radius:50%;background:#ef4444;flex-shrink:0;"></span>
-            <span id="bar-status-text" style="font-size:11px;font-weight:900;color:#ef4444;">OFFLINE</span>
-        </div>
-        <div style="display:none;align-items:center;gap:10px;font-size:10px;color:#64748b;" id="bar-stats">
-            <span>Bot: <b id="bar-bot-name" style="color:#fff;">None</b></span>
-            <span>Runs: <b id="bar-runs" style="color:#fff;font-family:monospace;">0</b></span>
-            <span>P/L: <b id="bar-pl" style="color:#fff;font-family:monospace;">$0.00</b></span>
-            <span>Win: <b id="bar-wr" style="color:#fff;font-family:monospace;">0%</b></span>
+<!-- ═══ BOT BAR ═══ -->
+<div id="bot-bar">
+    <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
+        <span class="status-dot" id="bar-dot"></span>
+        <span id="bar-status" style="font-size:11px;font-weight:700;color:var(--muted);">OFFLINE</span>
+        <div id="bar-info" style="display:none;align-items:center;gap:10px;font-size:10px;color:var(--muted);">
+            <span>Bot: <b id="bar-bot" style="color:var(--teal);">—</b></span>
+            <span>Runs: <b id="bar-runs" style="color:var(--text);font-family:monospace;">0</b></span>
+            <span>P/L: <b id="bar-pl" style="color:var(--text);font-family:monospace;">$0.00</b></span>
+            <span>Win: <b id="bar-wr" style="color:var(--text);font-family:monospace;">0%</b></span>
         </div>
     </div>
-    <button id="global-run-btn" onclick="toggleBotExecution()" class="btn btn-green" style="font-size:13px;font-weight:900;padding:8px 24px;border-radius:8px;letter-spacing:.03em;">▶ RUN BOT</button>
+    <button id="run-btn" onclick="toggleBot()" class="btn btn-run" style="font-size:13px;font-weight:900;padding:10px 28px;">▶ Run</button>
 </div>
 
 <script src="app.js"></script>
