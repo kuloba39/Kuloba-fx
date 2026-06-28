@@ -44,9 +44,73 @@ let marketMemory     = {};
 let seenSignals      = new Set();
 let signalHistory    = [];
 
-// Audio
-const winAudio  = new Audio('https://actions.google.com/sounds/v1/cartoon/slide_whistle_up.ogg');
-const lossAudio = new Audio('https://actions.google.com/sounds/v1/cartoon/boing_long.ogg');
+// Audio — coins for win, cash register ding, realistic loss sound
+const winAudio  = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3'); // coins
+const lossAudio = new Audio('https://assets.mixkit.co/active_storage/sfx/2955/2955-preview.mp3'); // fail thud
+
+// Preload
+winAudio.volume  = 0.7;
+lossAudio.volume = 0.6;
+winAudio.load();
+lossAudio.load();
+
+function playWin() {
+    try {
+        winAudio.currentTime = 0;
+        winAudio.play().catch(() => {
+            // Fallback: Web Audio API coin sound
+            playCoinSound();
+        });
+    } catch(e) { playCoinSound(); }
+}
+
+function playLoss() {
+    try {
+        lossAudio.currentTime = 0;
+        lossAudio.play().catch(() => {
+            playLossSound();
+        });
+    } catch(e) { playLossSound(); }
+}
+
+// Web Audio API fallback — coin jingle
+function playCoinSound() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        // Play 3 quick coin pings
+        [0, 0.08, 0.16].forEach((delay, i) => {
+            const osc  = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.type      = 'sine';
+            osc.frequency.setValueAtTime(880 + (i * 220), ctx.currentTime + delay);
+            osc.frequency.exponentialRampToValueAtTime(1200 + (i * 200), ctx.currentTime + delay + 0.1);
+            gain.gain.setValueAtTime(0.4, ctx.currentTime + delay);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.2);
+            osc.start(ctx.currentTime + delay);
+            osc.stop(ctx.currentTime + delay + 0.2);
+        });
+    } catch(e) {}
+}
+
+// Web Audio API fallback — dull thud for loss
+function playLossSound() {
+    try {
+        const ctx  = new (window.AudioContext || window.webkitAudioContext)();
+        const osc  = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(150, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(60, ctx.currentTime + 0.3);
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.4);
+    } catch(e) {}
+}
 
 // Market labels — valid Deriv underlying_symbols only
 const MKT = {
@@ -713,7 +777,7 @@ function handleContractResult(c) {
     totalPL     += profit;
 
     if (profit > 0) {
-        try { winAudio.play(); } catch(e) {}
+        playWin();
         totalWins++;
         currentStreak = currentStreak < 0 ? 1 : currentStreak + 1;
         log(`✅ WIN +$${profit.toFixed(2)} | Payout: $${payout.toFixed(2)}`, 'w');
@@ -722,7 +786,7 @@ function handleContractResult(c) {
         currentStake = baseStake;
 
     } else {
-        try { lossAudio.play(); } catch(e) {}
+        playLoss();
         totalLosses++;
         currentStreak = currentStreak > 0 ? -1 : currentStreak - 1;
         log(`❌ LOSS $${profit.toFixed(2)}`, 'l');
