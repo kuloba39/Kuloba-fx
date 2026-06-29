@@ -134,10 +134,13 @@ const MKT = {
 const ALL_MKTS = ["R_10","R_25","R_50","R_75","R_100","1HZ10V","1HZ25V","1HZ50V","1HZ75V","1HZ100V"];
 
 // Pending proposal tracking
-let pendingProposalId  = null;
+let pendingProposalId    = null;
 let pendingProposalPrice = null;
-let reqIdCounter       = 1;
+let reqIdCounter         = 1;
 function nextReqId() { return ++reqIdCounter; }
+
+// Pip sizes per symbol — populated from active_symbols
+let activePipSizes = {};
 
 // Contract type map
 const CONTRACT_MAP = {
@@ -441,16 +444,15 @@ function routeMsg(r) {
         if (sym) processHistory(sym, r.history);
     }
 
-    // Active symbols — log valid symbols for debugging
+    // Active symbols — store pip sizes per Amy's tip for correct last digit
     if (r.msg_type === 'active_symbols' && r.active_symbols) {
-        const digitMkts = r.active_symbols.filter(s =>
-            s.market === 'synthetic_index' && s.submarket !== 'random_daily'
+        const synthetics = r.active_symbols.filter(s =>
+            s.market === 'synthetic_index'
         );
-        log(`📡 ${digitMkts.length} valid markets loaded from Deriv`, 'i');
-        // Update valid symbol list dynamically
-        digitMkts.slice(0, 5).forEach(s => {
-            log(`   ${s.symbol} = ${s.display_name}`, 'd');
+        synthetics.forEach(s => {
+            if (s.pip) activePipSizes[s.symbol] = s.pip;
         });
+        log(`📡 ${synthetics.length} synthetic markets loaded | pip sizes stored`, 'i');
     }
 
     // STEP 2: Proposal response — extract ID and ask_price, then buy
@@ -480,19 +482,50 @@ function routeMsg(r) {
 // ================================================================
 // REAL TICK PROCESSING — no fake data ever
 // ================================================================
-function processRealTick(symbol, quote) {
-    const digit = parseInt(quote.toString().slice(-1));
+// Rolling window size — matches Deriv site exactly
+const ROLLING_WINDOW = 1000;
+
+function extractLastDigit(quote, pipSize) {
+    // Amy tip: align to pip_size for correct last digit
+    // For synthetics, last digit is last decimal at pip precision
+    if (pipSize) {
+        const decimals = pipSize.toString().split('.')[1]?.length || 0;
+        const fixed    = parseFloat(quote).toFixed(decimals);
+        return parseInt(fixed.slice(-1));
+    }
+    // Default: last character of price string
+    return parseInt(quote.toString().replace('.','').slice(-1));
+}
+
+function processRealTick(symbol, quote, pipSize) {
+    const digit = extractLastDigit(quote, pipSize);
     if (isNaN(digit)) return;
 
-    if (!digitData[symbol])    digitData[symbol]    = { counts: new Array(10).fill(0), ticks: 0 };
-    if (!marketMemory[symbol]) marketMemory[symbol] = { prices: [], digits: [], ticks: 0 };
+    // Initialize rolling window structure
+    if (!digitData[symbol]) {
+        digitData[symbol] = {
+            window: [],      // rolling array of last 1000 digits
+            counts: new Array(10).fill(0),
+            ticks:  0
+        };
+    }
+    if (!marketMemory[symbol]) {
+        marketMemory[symbol] = { prices: [], digits: [], ticks: 0 };
+    }
 
     const d  = digitData[symbol];
     const mm = marketMemory[symbol];
 
+    // Rolling window — push new digit, pop oldest if over 1000
+    d.window.push(digit);
+    if (d.window.length > ROLLING_WINDOW) {
+        const removed = d.window.shift();
+        d.counts[removed]--;  // remove oldest from count
+    }
     d.counts[digit]++;
-    d.ticks = Math.min(d.ticks + 1, 1000);
+    d.ticks = d.window.length; // exact rolling count
 
+    // Market memory for AI analysis
     mm.prices.push(quote);
     mm.digits.push(digit);
     mm.ticks++;
@@ -502,7 +535,7 @@ function processRealTick(symbol, quote) {
     if (digit === lastDigit) consecutiveSame++;
     else { consecutiveSame = 1; lastDigit = digit; }
 
-    // Update digit stats tab if active
+    // Update digit stats tab
     if (symbol === currentDigitMkt) {
         const lastEl = document.getElementById('d-last');
         const tickEl = document.getElementById('d-ticks');
@@ -512,37 +545,63 @@ function processRealTick(symbol, quote) {
         updateDigitStats(symbol);
     }
 
-    // Bot engine — if running and symbol matches
+    // Bot engine
     const botMkt = document.getElementById('bot-market')?.value;
     if (isBotRunning && symbol === botMkt) {
         runBotLogic(digit, quote);
     }
 
-    // AI mini update
-    if (symbol === (document.getElementById('bot-market')?.value)) {
+    // AI sidebar mini update
+    if (symbol === document.getElementById('bot-market')?.value) {
         updateAIMini(symbol);
     }
 }
 
 function processHistory(symbol, history) {
-    if (!history?.prices) return;
-    if (!digitData[symbol])    digitData[symbol]    = { counts: new Array(10).fill(0), ticks: 0 };
-    if (!marketMemory[symbol]) marketMemory[symbol] = { prices: [], digits: [], ticks: 0 };
+    if (!history?.prices || history.prices.length === 0) return;
+
+    // Initialize with rolling window structure
+    if (!digitData[symbol]) {
+        digitData[symbol] = { window: [], counts: new Array(10).fill(0), ticks: 0 };
+    }
+    if (!marketMemory[symbol]) {
+        marketMemory[symbol] = { prices: [], digits: [], ticks: 0 };
+    }
 
     const d  = digitData[symbol];
     const mm = marketMemory[symbol];
 
-    history.prices.forEach(price => {
-        const digit = parseInt(price.toString().slice(-1));
-        if (!isNaN(digit)) { d.counts[digit]++; mm.digits.push(digit); mm.prices.push(price); }
+    // Get pip_size from active symbols if available
+    const pipSize = activePipSizes[symbol] || null;
+
+    // Seed rolling window from history
+    // Take last ROLLING_WINDOW prices to match Deriv site exactly
+    const prices = history.prices.slice(-ROLLING_WINDOW);
+
+    // Reset and rebuild from history
+    d.window  = [];
+    d.counts  = new Array(10).fill(0);
+
+    prices.forEach(price => {
+        const digit = extractLastDigit(price, pipSize);
+        if (!isNaN(digit)) {
+            d.window.push(digit);
+            d.counts[digit]++;
+        }
     });
-    d.ticks = Math.min(d.ticks + history.prices.length, 1000);
-    mm.ticks += history.prices.length;
-    if (mm.prices.length > 500) { mm.prices = mm.prices.slice(-500); mm.digits = mm.digits.slice(-500); }
+    d.ticks = d.window.length;
 
-    log(`Loaded ${history.prices.length} ticks for ${MKT[symbol]||symbol}`, 'i');
+    // Market memory
+    mm.prices = history.prices.slice(-500);
+    mm.digits = mm.prices.map(p => extractLastDigit(p, pipSize));
+    mm.ticks  = mm.prices.length;
 
-    if (symbol === currentDigitMkt) { renderDigitCircles(symbol); updateDigitStats(symbol); }
+    log(`📊 ${MKT[symbol]||symbol}: ${d.ticks} ticks loaded (rolling window)`, 'i');
+
+    if (symbol === currentDigitMkt) {
+        renderDigitCircles(symbol);
+        updateDigitStats(symbol);
+    }
     updateAIMini(symbol);
 }
 
@@ -550,16 +609,24 @@ function subscribeDigitFeed(symbol) {
     if (!derivWS || derivWS.readyState !== WebSocket.OPEN) return;
     if (activeTickSubs.has(symbol)) return;
 
-    // Fetch 500 real ticks first, then subscribe to live stream
+    // STEP 1: Seed with 1000 ticks history (Amy confirmed 1000 matches Deriv site)
     derivWS.send(JSON.stringify({
         ticks_history: symbol,
-        adjust_start_time: 1,
-        count: 500,
-        end: "latest",
-        style: "ticks",
-        subscribe: 1
+        end:           "latest",
+        count:         1000,
+        style:         "ticks",
+        req_id:        nextReqId()
     }));
+
+    // STEP 2: Subscribe to live ticks separately
+    derivWS.send(JSON.stringify({
+        ticks:     symbol,
+        subscribe: 1,
+        req_id:    nextReqId()
+    }));
+
     activeTickSubs.add(symbol);
+    log(`📡 Subscribed: ${MKT[symbol]||symbol} (1000 tick history + live)`, 'i');
 }
 
 // ================================================================
@@ -1365,9 +1432,9 @@ function renderDigitCircles(symbol) {
     const barsEl    = document.getElementById('d-bars');
     if (!circlesEl) return;
 
-    const data   = digitData[symbol] || { counts: new Array(10).fill(0), ticks: 0 };
+    const data   = digitData[symbol] || { counts: new Array(10).fill(0), ticks: 0, window: [] };
     const counts = data.counts;
-    const total  = Math.max(data.ticks, 1);
+    const total  = Math.max(data.ticks, 1); // real rolling window size
     const pred   = parseInt(document.getElementById('bot-pred')?.value ?? -1);
     const ranked = counts.map((c,d) => ({d,c})).sort((a,b) => b.c - a.c);
 
@@ -1499,3 +1566,187 @@ function clearJournal() {
     const el = document.getElementById('journal-log');
     if (el) el.innerHTML = '<div class="jline d">[Cleared]</div>';
 }
+
+// ================================================================
+// LEGAL — Terms, Privacy, Risk Disclaimer
+// ================================================================
+
+const LEGAL_CONTENT = {
+
+    terms: {
+        title: "📄 Terms of Service",
+        body: `
+<h3 style="color:#e2e8f0;font-size:15px;margin-bottom:12px;">Terms of Service</h3>
+<p style="margin-bottom:10px;"><b style="color:#e2e8f0;">Effective Date:</b> 1 January 2026</p>
+
+<h4 style="color:#00d2c8;margin:14px 0 6px;">1. Acceptance of Terms</h4>
+<p>By accessing or using Btraderhub ("the Platform"), you agree to be bound by these Terms of Service. If you do not agree, do not use the Platform.</p>
+
+<h4 style="color:#00d2c8;margin:14px 0 6px;">2. Description of Service</h4>
+<p>Btraderhub is a third-party trading interface that connects to the Deriv API. We provide automated trading tools, market analysis, and AI-powered signals. We are not affiliated with, endorsed by, or part of Deriv Ltd.</p>
+
+<h4 style="color:#00d2c8;margin:14px 0 6px;">3. Eligibility</h4>
+<p>You must be at least 18 years old and legally permitted to trade financial instruments in your jurisdiction to use this Platform. It is your responsibility to verify local laws before trading.</p>
+
+<h4 style="color:#00d2c8;margin:14px 0 6px;">4. No Financial Advice</h4>
+<p>Nothing on Btraderhub constitutes financial, investment, or trading advice. All AI signals, market analysis, and bot strategies are for informational purposes only. You trade at your own risk.</p>
+
+<h4 style="color:#00d2c8;margin:14px 0 6px;">5. User Responsibilities</h4>
+<p>You are solely responsible for:</p>
+<ul style="margin:6px 0 6px 20px;">
+    <li>All trades executed through your Deriv account</li>
+    <li>Setting appropriate risk parameters (stake, stop loss, take profit)</li>
+    <li>Ensuring your Deriv account has sufficient funds</li>
+    <li>Compliance with applicable laws and regulations</li>
+</ul>
+
+<h4 style="color:#00d2c8;margin:14px 0 6px;">6. Limitation of Liability</h4>
+<p>Btraderhub, its owners, developers, and affiliates shall not be liable for any trading losses, lost profits, or damages arising from the use of this Platform, including but not limited to losses caused by bot malfunction, API errors, connectivity issues, or market conditions.</p>
+
+<h4 style="color:#00d2c8;margin:14px 0 6px;">7. Modifications</h4>
+<p>We reserve the right to modify these Terms at any time. Continued use of the Platform constitutes acceptance of updated Terms.</p>
+
+<h4 style="color:#00d2c8;margin:14px 0 6px;">8. Termination</h4>
+<p>We reserve the right to suspend or terminate access to the Platform at our discretion, without notice, for any reason including violation of these Terms.</p>
+
+<h4 style="color:#00d2c8;margin:14px 0 6px;">9. Governing Law</h4>
+<p>These Terms are governed by applicable international law. Any disputes shall be resolved through binding arbitration.</p>
+
+<p style="margin-top:16px;color:#4a5568;font-size:11px;">For questions: support@btraderhub.com</p>`
+    },
+
+    privacy: {
+        title: "🔒 Privacy Policy",
+        body: `
+<h3 style="color:#e2e8f0;font-size:15px;margin-bottom:12px;">Privacy Policy</h3>
+<p style="margin-bottom:10px;"><b style="color:#e2e8f0;">Effective Date:</b> 1 January 2026</p>
+
+<h4 style="color:#00d2c8;margin:14px 0 6px;">1. Information We Collect</h4>
+<p>Btraderhub does <b style="color:#e2e8f0;">not</b> collect, store, or process your personal data on our servers. All authentication is handled directly between your browser and Deriv's servers via OAuth 2.0 PKCE.</p>
+<p style="margin-top:8px;">We do not store:</p>
+<ul style="margin:6px 0 6px 20px;">
+    <li>Your Deriv account credentials</li>
+    <li>Your trading history or account balance</li>
+    <li>Personal identification information</li>
+    <li>Payment or financial data</li>
+</ul>
+
+<h4 style="color:#00d2c8;margin:14px 0 6px;">2. Session Data</h4>
+<p>We temporarily store the following in your browser's <b style="color:#e2e8f0;">sessionStorage</b> only during the login process:</p>
+<ul style="margin:6px 0 6px 20px;">
+    <li>PKCE code verifier (deleted immediately after login)</li>
+    <li>OAuth state parameter (deleted immediately after login)</li>
+</ul>
+<p>This data never leaves your browser and is automatically cleared when you close the tab.</p>
+
+<h4 style="color:#00d2c8;margin:14px 0 6px;">3. Deriv API</h4>
+<p>Your trading data is processed directly by Deriv Ltd. through their API. Please review <a href="https://deriv.com/privacy/" target="_blank" style="color:var(--teal);">Deriv's Privacy Policy</a> for information on how they handle your data.</p>
+
+<h4 style="color:#00d2c8;margin:14px 0 6px;">4. Cookies</h4>
+<p>Btraderhub does not use cookies or tracking technologies.</p>
+
+<h4 style="color:#00d2c8;margin:14px 0 6px;">5. Third-Party Services</h4>
+<p>We use the following third-party services:</p>
+<ul style="margin:6px 0 6px 20px;">
+    <li><b style="color:#e2e8f0;">Deriv API</b> — for trade execution and market data</li>
+    <li><b style="color:#e2e8f0;">Vercel</b> — for hosting (subject to Vercel's privacy policy)</li>
+    <li><b style="color:#e2e8f0;">TradingView</b> — for charting widgets</li>
+</ul>
+
+<h4 style="color:#00d2c8;margin:14px 0 6px;">6. Affiliate Disclosure</h4>
+<p>Btraderhub participates in the Deriv affiliate program. When you create a new Deriv account through our platform, we may receive a commission. This does not affect your trading costs or experience.</p>
+
+<h4 style="color:#00d2c8;margin:14px 0 6px;">7. Contact</h4>
+<p>For privacy concerns: <a href="mailto:support@btraderhub.com" style="color:var(--teal);">support@btraderhub.com</a></p>`
+    },
+
+    risk: {
+        title: "⚠️ Risk Disclaimer",
+        body: `
+<div style="background:#ff444f14;border:1px solid #ff444f44;border-radius:8px;padding:14px;margin-bottom:16px;">
+    <p style="color:#ff444f;font-weight:700;font-size:14px;">⚠️ HIGH RISK WARNING</p>
+    <p style="margin-top:6px;">Trading binary options and synthetic indices carries a high level of risk and may not be suitable for all investors. You may lose some or all of your invested capital.</p>
+</div>
+
+<h4 style="color:#00d2c8;margin:14px 0 6px;">1. Nature of Risk</h4>
+<p>Binary options and CFDs are complex instruments. The majority of retail traders lose money when trading these products. You should consider whether you understand how these instruments work and whether you can afford to take the high risk of losing your money.</p>
+
+<h4 style="color:#00d2c8;margin:14px 0 6px;">2. Automated Trading Risk</h4>
+<p>Automated trading bots, including those provided or configured on Btraderhub, carry additional risks:</p>
+<ul style="margin:6px 0 6px 20px;">
+    <li>Past performance of a bot does NOT guarantee future results</li>
+    <li>Bots can malfunction due to connectivity issues, API changes, or software bugs</li>
+    <li>Market conditions can change rapidly in ways a bot cannot anticipate</li>
+    <li>The Martingale strategy can result in rapid and total loss of capital</li>
+    <li>AI signals are based on statistical patterns and are NOT guaranteed</li>
+</ul>
+
+<h4 style="color:#00d2c8;margin:14px 0 6px;">3. AI Signal Disclaimer</h4>
+<p>AI-generated signals and win probability estimates are based on historical tick data analysis. They are <b style="color:#e2e8f0;">not</b> financial advice and do not guarantee any particular outcome. Confidence percentages represent statistical patterns only and should not be relied upon as predictions.</p>
+
+<h4 style="color:#00d2c8;margin:14px 0 6px;">4. Capital at Risk</h4>
+<p>Never trade with money you cannot afford to lose. We strongly recommend:</p>
+<ul style="margin:6px 0 6px 20px;">
+    <li>Starting with a <b style="color:#e2e8f0;">demo account</b> before trading real money</li>
+    <li>Setting strict stop loss limits before running any bot</li>
+    <li>Never using borrowed money or funds needed for essential expenses</li>
+    <li>Limiting bot stake to a small percentage of your total capital</li>
+</ul>
+
+<h4 style="color:#00d2c8;margin:14px 0 6px;">5. Regulatory Notice</h4>
+<p>Btraderhub is a third-party tool and is not regulated by any financial authority. Trading through Deriv is subject to Deriv's own regulatory framework. Please ensure trading is legal in your jurisdiction.</p>
+
+<h4 style="color:#00d2c8;margin:14px 0 6px;">6. No Guarantee of Profit</h4>
+<p>Btraderhub makes no representation or warranty that use of the platform will result in profits. All trading results depend on market conditions, your settings, and factors beyond our control.</p>
+
+<div style="background:#00d2c814;border:1px solid #00d2c844;border-radius:8px;padding:14px;margin-top:16px;">
+    <p style="color:#00d2c8;font-weight:700;">✅ By using Btraderhub, you confirm that:</p>
+    <ul style="margin:8px 0 0 20px;color:#a0aec0;">
+        <li>You are 18 years or older</li>
+        <li>You understand the risks of binary options trading</li>
+        <li>You are trading with money you can afford to lose</li>
+        <li>You have read and accepted the Terms of Service</li>
+    </ul>
+</div>`
+    }
+};
+
+function showLegal(type) {
+    const modal   = document.getElementById('legal-modal');
+    const title   = document.getElementById('legal-title');
+    const content = document.getElementById('legal-content');
+    const data    = LEGAL_CONTENT[type];
+    if (!modal || !data) return;
+    title.textContent  = data.title;
+    content.innerHTML  = data.body;
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeLegal() {
+    const modal = document.getElementById('legal-modal');
+    if (modal) modal.style.display = 'none';
+    document.body.style.overflow = '';
+}
+
+// Close modal on backdrop click
+document.addEventListener('click', (e) => {
+    const modal = document.getElementById('legal-modal');
+    if (e.target === modal) closeLegal();
+});
+
+// Show risk disclaimer on first visit
+window.addEventListener('load', () => {
+    if (!sessionStorage.getItem('risk-accepted')) {
+        setTimeout(() => {
+            showLegal('risk');
+            // Mark as seen after they close it
+            const origClose = window.closeLegal;
+            window.closeLegal = function() {
+                sessionStorage.setItem('risk-accepted', '1');
+                origClose();
+                window.closeLegal = origClose;
+            };
+        }, 1500);
+    }
+}, { once: true });

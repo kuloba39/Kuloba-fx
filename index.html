@@ -30,7 +30,7 @@
     --blue:#4299e1;
     --purple:#9f7aea;
 }
-body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none;}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none;padding-bottom:0;}
 ::selection{background:#ff444f33;color:#fff;}
 
 /* ── Header ── */
@@ -612,5 +612,30 @@ body{padding-bottom:60px;}
 </div>
 
 <script src="app.js"></script>
+
+<!-- ═══ LEGAL MODAL ═══ -->
+<div id="legal-modal" style="display:none;position:fixed;inset:0;z-index:99999;background:#000000bb;align-items:center;justify-content:center;padding:16px;">
+    <div style="background:#161b27;border:1px solid #2d3748;border-radius:14px;width:100%;max-width:680px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;">
+        <div style="padding:16px 20px;border-bottom:1px solid #2d3748;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+            <h2 id="legal-title" style="font-size:16px;font-weight:900;color:#e2e8f0;">Legal</h2>
+            <button onclick="closeLegal()" style="background:none;border:none;color:#718096;cursor:pointer;font-size:20px;padding:0;">✕</button>
+        </div>
+        <div id="legal-content" style="flex:1;overflow-y:auto;padding:20px;font-size:13px;line-height:1.7;color:#a0aec0;"></div>
+        <div style="padding:14px 20px;border-top:1px solid #2d3748;flex-shrink:0;">
+            <button onclick="closeLegal()" style="background:var(--teal);color:#000;border:none;border-radius:8px;padding:10px 24px;font-weight:700;cursor:pointer;width:100%;">I Understand</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ FOOTER — sits above bot bar ═══ -->
+<footer style="background:#0e1118;border-top:1px solid #1a2035;padding:8px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;flex-shrink:0;margin-bottom:56px;">
+    <div style="font-size:10px;color:#4a5568;">© 2026 Btraderhub. All rights reserved. Trading involves significant risk of loss.</div>
+    <div style="display:flex;gap:14px;">
+        <button onclick="showLegal('terms')"   style="background:none;border:none;color:#4a5568;font-size:10px;cursor:pointer;text-decoration:underline;padding:0;">Terms of Service</button>
+        <button onclick="showLegal('privacy')" style="background:none;border:none;color:#4a5568;font-size:10px;cursor:pointer;text-decoration:underline;padding:0;">Privacy Policy</button>
+        <button onclick="showLegal('risk')"    style="background:none;border:none;color:#ff444f;font-size:10px;cursor:pointer;text-decoration:underline;padding:0;font-weight:700;">⚠️ Risk Disclaimer</button>
+    </div>
+</footer>
+
 </body>
 </html>
