@@ -457,6 +457,7 @@ function routeMsg(r) {
 
     // STEP 2: Proposal response — extract ID and ask_price, then buy
     if (r.msg_type === 'proposal') {
+        clearProposalTimeout(); // clear timeout — proposal arrived
         if (r.error) {
             pendingContract = false;
             lastContractId  = null;
@@ -465,7 +466,7 @@ function routeMsg(r) {
         } else if (r.proposal && isBotRunning) {
             const proposalId = r.proposal.id;
             const askPrice   = r.proposal.ask_price;
-            log(`✅ Proposal received: ${proposalId} | Ask: $${askPrice}`, 'i');
+            log(`✅ Proposal: ${proposalId} | Ask: $${askPrice}`, 'i');
             buyFromProposal(proposalId, parseFloat(askPrice));
         }
     }
@@ -689,6 +690,9 @@ function validateBot() {
     return null;
 }
 
+// Proposal timeout tracker
+let proposalTimeout = null;
+
 function runBotLogic(digit, quote) {
     if (!isBotRunning || pendingContract) return;
 
@@ -699,15 +703,20 @@ function runBotLogic(digit, quote) {
 
     switch(type) {
         case 'over_under':
+            // Fire only when digit meets condition
             if (botDirection === 'over'  && digit > pred)  shouldTrade = true;
             if (botDirection === 'under' && digit < pred)  shouldTrade = true;
             break;
+
         case 'even_odd':
-            if (botDirection === 'even' && digit % 2 === 0) shouldTrade = true;
-            if (botDirection === 'odd'  && digit % 2 !== 0) shouldTrade = true;
+            // FIX: Trade on EVERY tick — contract handles even/odd condition
+            // No need to filter by digit, Deriv decides win/loss
+            shouldTrade = true;
             break;
+
         case 'rise_fall':
         case 'only_ups_downs':
+            // FIX: Trade on every tick immediately
             shouldTrade = true;
             break;
     }
@@ -715,6 +724,25 @@ function runBotLogic(digit, quote) {
     if (shouldTrade) {
         lastEntrySpot = quote;
         executeContract(quote);
+    }
+}
+
+// Auto-reset pendingContract if proposal takes too long (5 seconds)
+function startProposalTimeout() {
+    clearProposalTimeout();
+    proposalTimeout = setTimeout(() => {
+        if (pendingContract && lastContractId === "pending") {
+            log("⏱ Proposal timed out — resetting for next tick", 'x');
+            pendingContract = false;
+            lastContractId  = null;
+        }
+    }, 5000);
+}
+
+function clearProposalTimeout() {
+    if (proposalTimeout) {
+        clearTimeout(proposalTimeout);
+        proposalTimeout = null;
     }
 }
 
@@ -780,6 +808,9 @@ function executeContract(entrySpot) {
 
     log(`📋 Proposal: ${contractType} @ $${currentStake.toFixed(2)} | ${MKT[market]||market} | dur:${proposal.duration||'?'}${proposal.duration_unit||''}${proposal.barrier?' barrier:'+proposal.barrier:''}`, 'i');
     derivWS.send(JSON.stringify(proposal));
+
+    // Start timeout — reset if proposal takes more than 5 seconds
+    startProposalTimeout();
 }
 
 // ── STEP 2: Buy using proposal ID (Amy-verified flow) ──
@@ -797,6 +828,7 @@ function buyFromProposal(proposalId, askPrice) {
 }
 
 function handleBuyResponse(r) {
+    clearProposalTimeout(); // clear any pending timeouts
     if (r.error) {
         pendingContract = false;
         lastContractId  = null;
@@ -1111,62 +1143,148 @@ function generateSignal(symbol) {
     const total  = Math.max(data.ticks, 1);
     const ranked = counts.map((c,d) => ({d,c})).sort((a,b) => b.c - a.c);
 
-    // Even/Odd ratio from real ticks
+    // Even/Odd from real ticks
     const evenCount = counts.filter((_,i) => i%2===0).reduce((a,b)=>a+b,0);
-    const overCount = counts.slice(5).reduce((a,b)=>a+b,0); // digits 5-9
     const evenPct   = (evenCount / total) * 100;
-    const overPct   = (overCount / total) * 100;
+    const oddPct    = 100 - evenPct;
 
-    // Momentum from real price movement
+    // Momentum
     let momentum = 0;
     if (mm && mm.prices.length >= 20) {
         const recent = mm.prices.slice(-20);
         const rising = recent.filter((p,i) => i > 0 && p > recent[i-1]).length;
-        momentum = ((rising / 19) - 0.5) * 2; // -1 to +1
+        momentum = ((rising / 19) - 0.5) * 2;
     }
 
-    // Consecutive digit pressure
-    const consecBonus = Math.min(consecutiveSame * 2, 10);
+    const consecBonus = Math.min(consecutiveSame * 2, 8);
 
-    // Calculate signals
-    let best = { confidence: 0 };
+    // Collect ALL possible signals
+    const signals = [];
 
-    // Even/Odd signal
-    if (evenPct > 54) {
-        const conf = Math.min(92, Math.round(evenPct + consecBonus * 0.3));
-        if (conf > best.confidence) best = { type:'even_odd', botDirection:'even', direction:'Even Only', confidence:conf, reason:`Even digits ${evenPct.toFixed(1)}% of last ${total} ticks`, color:'var(--green)' };
+    // ── EVEN/ODD ──
+    if (evenPct > 52) {
+        signals.push({
+            type:'even_odd', botDirection:'even',
+            direction:'Even Only',
+            confidence: Math.min(93, Math.round(evenPct + consecBonus * 0.3)),
+            reason: `Even digits: ${evenPct.toFixed(1)}% of ${total} ticks`,
+            color:'var(--green)', pred: null
+        });
     }
-    if (evenPct < 46) {
-        const conf = Math.min(92, Math.round((100-evenPct) + consecBonus * 0.3));
-        if (conf > best.confidence) best = { type:'even_odd', botDirection:'odd', direction:'Odd Only', confidence:conf, reason:`Odd digits ${(100-evenPct).toFixed(1)}% of last ${total} ticks`, color:'var(--teal)' };
+    if (oddPct > 52) {
+        signals.push({
+            type:'even_odd', botDirection:'odd',
+            direction:'Odd Only',
+            confidence: Math.min(93, Math.round(oddPct + consecBonus * 0.3)),
+            reason: `Odd digits: ${oddPct.toFixed(1)}% of ${total} ticks`,
+            color:'var(--teal)', pred: null
+        });
     }
 
-    // Over/Under signal
-    if (overPct > 54) {
-        const conf = Math.min(90, Math.round(overPct + consecBonus * 0.2));
-        if (conf > best.confidence) best = { type:'over_under', botDirection:'over', direction:'Over 4', confidence:conf, reason:`${overPct.toFixed(1)}% ticks landed digit 5+`, color:'var(--blue)' };
-    }
-    if (overPct < 46) {
-        const conf = Math.min(90, Math.round((100-overPct) + consecBonus * 0.2));
-        if (conf > best.confidence) best = { type:'over_under', botDirection:'under', direction:'Under 5', confidence:conf, reason:`${(100-overPct).toFixed(1)}% ticks landed digit 0-4`, color:'var(--purple)' };
+    // ── OVER/UNDER — scan ALL barriers 0-9 ──
+    // Over X = probability that digit > X
+    // Under X = probability that digit < X
+    for (let barrier = 0; barrier <= 9; barrier++) {
+        // Over barrier: digits > barrier
+        const overCount = counts.slice(barrier + 1).reduce((a,b)=>a+b,0);
+        const overPct   = (overCount / total) * 100;
+
+        // Under barrier: digits < barrier
+        const underCount = counts.slice(0, barrier).reduce((a,b)=>a+b,0);
+        const underPct   = (underCount / total) * 100;
+
+        // Only generate signal if probability is meaningfully above 50%
+        if (overPct > 52 && barrier < 9) {
+            const conf = Math.min(93, Math.round(overPct + consecBonus * 0.2));
+            signals.push({
+                type:'over_under', botDirection:'over',
+                direction:`Over ${barrier}`,
+                confidence: conf,
+                reason: `${overPct.toFixed(1)}% of ticks land above ${barrier}`,
+                color:'var(--blue)', pred: barrier
+            });
+        }
+
+        if (underPct > 52 && barrier > 0) {
+            const conf = Math.min(93, Math.round(underPct + consecBonus * 0.2));
+            signals.push({
+                type:'over_under', botDirection:'under',
+                direction:`Under ${barrier}`,
+                confidence: conf,
+                reason: `${underPct.toFixed(1)}% of ticks land below ${barrier}`,
+                color:'var(--purple)', pred: barrier
+            });
+        }
     }
 
-    // Rise/Fall from momentum
-    if (Math.abs(momentum) > 0.3) {
+    // ── RISE/FALL from momentum ──
+    if (Math.abs(momentum) > 0.25) {
         const dir  = momentum > 0 ? 'rise' : 'fall';
-        const conf = Math.min(88, Math.round(55 + Math.abs(momentum) * 30));
-        if (conf > best.confidence) best = { type:'rise_fall', botDirection:dir, direction:dir==='rise'?'Rise Only':'Fall Only', confidence:conf, reason:`Price momentum ${momentum>0?'bullish':'bearish'} (${(Math.abs(momentum)*100).toFixed(0)}%)`, color:momentum>0?'var(--green)':'var(--red)' };
+        const conf = Math.min(88, Math.round(54 + Math.abs(momentum) * 30));
+        signals.push({
+            type:'rise_fall', botDirection:dir,
+            direction: dir === 'rise' ? 'Rise Only' : 'Fall Only',
+            confidence: conf,
+            reason: `Price ${momentum>0?'rising':'falling'} momentum (${(Math.abs(momentum)*100).toFixed(0)}%)`,
+            color: momentum > 0 ? 'var(--green)' : 'var(--red)', pred: null
+        });
     }
 
-    best.symbol     = symbol;
-    best.label      = MKT[symbol] || symbol;
-    best.hotDigit   = ranked[0]?.d;
-    best.coldDigit  = ranked[9]?.d;
-    best.evenPct    = evenPct.toFixed(1);
-    best.overPct    = overPct.toFixed(1);
-    best.totalTicks = total;
+    // ── HOT DIGIT MATCHES ──
+    // If a digit appears far more than expected (>14% vs expected 10%)
+    ranked.slice(0, 3).forEach(({d, c}) => {
+        const pct = (c / total) * 100;
+        if (pct > 13) {
+            signals.push({
+                type:'over_under', botDirection:'over',
+                direction:`Matches ${d}`,
+                confidence: Math.min(88, Math.round(pct * 5)),
+                reason: `Digit ${d} appeared ${pct.toFixed(1)}% (expected 10%)`,
+                color:'var(--amber)', pred: d
+            });
+        }
+    });
 
-    return best.confidence > 0 ? best : null;
+    // Sort all signals by confidence, pick the best
+    signals.sort((a,b) => b.confidence - a.confidence);
+    const best = signals[0];
+    if (!best) return null;
+
+    best.symbol      = symbol;
+    best.label       = MKT[symbol] || symbol;
+    best.hotDigit    = ranked[0]?.d;
+    best.coldDigit   = ranked[9]?.d;
+    best.evenPct     = evenPct.toFixed(1);
+    best.totalTicks  = total;
+    best.allSignals  = signals.slice(0, 5); // top 5 for display
+
+    return best;
+}
+
+// Return top N signals for a symbol (used by scanner tab)
+function getTopSignals(symbol, n = 5) {
+    const data = digitData[symbol];
+    if (!data || data.ticks < 50) return [];
+
+    const counts = data.counts;
+    const total  = Math.max(data.ticks, 1);
+    const signals = [];
+
+    // Even/Odd
+    const evenPct = (counts.filter((_,i)=>i%2===0).reduce((a,b)=>a+b,0)/total)*100;
+    if (evenPct > 52) signals.push({ direction:`Even Only`, confidence:Math.min(93,Math.round(evenPct)), type:'even_odd', botDirection:'even', color:'var(--green)', pred:null });
+    if (100-evenPct > 52) signals.push({ direction:`Odd Only`, confidence:Math.min(93,Math.round(100-evenPct)), type:'even_odd', botDirection:'odd', color:'var(--teal)', pred:null });
+
+    // Over/Under all barriers
+    for (let b = 0; b <= 9; b++) {
+        const overPct  = (counts.slice(b+1).reduce((a,c)=>a+c,0)/total)*100;
+        const underPct = (counts.slice(0,b).reduce((a,c)=>a+c,0)/total)*100;
+        if (overPct > 52 && b < 9)  signals.push({ direction:`Over ${b}`,  confidence:Math.min(93,Math.round(overPct)),  type:'over_under', botDirection:'over',  color:'var(--blue)',   pred:b });
+        if (underPct > 52 && b > 0) signals.push({ direction:`Under ${b}`, confidence:Math.min(93,Math.round(underPct)), type:'over_under', botDirection:'under', color:'var(--purple)', pred:b });
+    }
+
+    signals.sort((a,b) => b.confidence - a.confidence);
+    return signals.slice(0, n);
 }
 
 function runAIScan() {
@@ -1194,15 +1312,18 @@ function startAILoop() {
             }
         }
 
-        // Notify on strong signals
-        if (sig && sig.confidence >= 80) {
-            const key = `${mkt}-${sig.direction}-${Math.floor(Date.now()/60000)}`;
-            if (!seenSignals.has(key)) {
-                seenSignals.add(key);
-                notify(`🧠 ${sig.label}`, `${sig.direction} | ${sig.confidence}% confidence\n${sig.reason}`, 'ok');
-                addSignalHistory(sig);
+        // Notify on strong signals — show top 3
+        const topSigsForNotif = getTopSignals(mkt, 3);
+        topSigsForNotif.forEach(s => {
+            if (s.confidence >= 78) {
+                const key = `${mkt}-${s.direction}-${Math.floor(Date.now()/90000)}`;
+                if (!seenSignals.has(key)) {
+                    seenSignals.add(key);
+                    notify(`🧠 ${MKT[mkt]||mkt}`, `${s.direction} | ${s.confidence}% confidence\n${s.reason}`, 'ok');
+                    addSignalHistory(s);
+                }
             }
-        }
+        });
     }, 30000);
 
     // Initial scan after 2 seconds
@@ -1210,39 +1331,64 @@ function startAILoop() {
 }
 
 function updateAIPanel(sig, symbol) {
-    const data = digitData[symbol] || { counts: new Array(10).fill(0), ticks: 0 };
+    const data    = digitData[symbol] || { counts: new Array(10).fill(0), ticks: 0 };
+    const topSigs = getTopSignals(symbol, 5);
 
-    // Confidence meter
+    // Confidence meter — best signal
     const confVal = document.getElementById('ai-confidence-val');
     const confBar = document.getElementById('ai-conf-bar');
     const confLbl = document.getElementById('ai-conf-label');
 
     if (sig) {
-        if (confVal) { confVal.textContent = `${sig.confidence}%`; confVal.style.color = sig.confidence >= 75 ? 'var(--teal)' : sig.confidence >= 60 ? 'var(--amber)' : 'var(--red)'; }
-        if (confBar) { confBar.style.width = `${sig.confidence}%`; confBar.style.background = sig.confidence >= 75 ? 'var(--teal)' : sig.confidence >= 60 ? 'var(--amber)' : 'var(--red)'; }
-        if (confLbl) confLbl.textContent = sig.confidence >= 75 ? 'High probability setup' : sig.confidence >= 60 ? 'Moderate setup' : 'Weak signal';
+        const col = sig.confidence >= 75 ? 'var(--teal)' : sig.confidence >= 60 ? 'var(--amber)' : 'var(--red)';
+        if (confVal) { confVal.textContent = `${sig.confidence}%`; confVal.style.color = col; }
+        if (confBar) { confBar.style.width = `${sig.confidence}%`; confBar.style.background = col; }
+        if (confLbl) confLbl.textContent = sig.confidence >= 75 ? '🔥 High probability setup' : sig.confidence >= 60 ? '⚡ Moderate setup' : '📉 Weak signal';
 
         const st = document.getElementById('ai-signal-text');
         const sd = document.getElementById('ai-signal-detail');
-        if (st) { st.textContent = `${sig.direction}`; st.style.color = sig.color || 'var(--teal)'; }
-        if (sd) sd.textContent = `${sig.reason} | Hot: ${sig.hotDigit} Cold: ${sig.coldDigit}`;
+        if (st) { st.textContent = sig.direction; st.style.color = sig.color || 'var(--teal)'; }
+        if (sd) sd.textContent = `${sig.reason}${sig.hotDigit !== undefined ? ' | Hot: ' + sig.hotDigit + ' Cold: ' + sig.coldDigit : ''}`;
     } else {
-        if (confVal) { confVal.textContent = `—%`; confVal.style.color = 'var(--muted)'; }
+        if (confVal) { confVal.textContent = '—%'; confVal.style.color = 'var(--muted)'; }
         if (confBar) confBar.style.width = '0%';
-        if (confLbl) confLbl.textContent = data.ticks < 50 ? `Collecting data (${data.ticks}/50 ticks)...` : 'No strong signal';
+        if (confLbl) confLbl.textContent = data.ticks < 50 ? `Collecting... (${data.ticks}/50 ticks)` : 'No strong signal';
         const st = document.getElementById('ai-signal-text');
         if (st) { st.textContent = 'No clear signal'; st.style.color = 'var(--muted)'; }
     }
 
     // Market state
     const state = classifyMarket(symbol);
-    const ms    = document.getElementById('ai-market-state');
-    const md    = document.getElementById('ai-market-detail');
+    const ms = document.getElementById('ai-market-state');
+    const md = document.getElementById('ai-market-detail');
     if (ms) ms.textContent = state.label;
-    if (md) md.textContent = `${data.ticks} real ticks | Even: ${sig?.evenPct||'—'}% | Over: ${sig?.overPct||'—'}%`;
+    if (md) md.textContent = `${data.ticks} ticks | Even: ${sig?.evenPct || '—'}%`;
 
-    // Update scanner tab too
-    updateScannerResults();
+    // Show ALL top signals in sidebar
+    const sigBox = document.getElementById('ai-signal-box');
+    if (sigBox && topSigs.length > 0) {
+        const sigsHtml = topSigs.map((s, i) => `
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:5px 8px;
+                        background:var(--bg3);border-radius:6px;margin-bottom:4px;cursor:pointer;
+                        border-left:3px solid ${s.color};"
+                 onclick="applySignalToBot(${JSON.stringify(s).replace(/"/g,'&quot;')})">
+                <div>
+                    <div style="font-size:11px;font-weight:900;color:${s.color};">${s.direction}</div>
+                    <div style="font-size:9px;color:var(--muted);">${s.reason}</div>
+                </div>
+                <div style="text-align:right;flex-shrink:0;margin-left:8px;">
+                    <div style="font-size:12px;font-weight:900;color:${s.color};">${s.confidence}%</div>
+                    <div style="font-size:9px;color:var(--teal);">Apply ▶</div>
+                </div>
+            </div>`).join('');
+
+        sigBox.innerHTML = `
+            <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">
+                Top Signals — ${MKT[symbol]||symbol}
+            </div>
+            ${sigsHtml}
+            ${data.ticks < 50 ? `<div style="font-size:10px;color:var(--dim);text-align:center;padding:8px;">Loading... ${data.ticks}/50 ticks</div>` : ''}`;
+    }
 }
 
 function updateAIMini(symbol) {
@@ -1288,16 +1434,24 @@ function classifyMarket(symbol) {
 }
 
 function addSignalHistory(sig) {
-    signalHistory.unshift(sig);
-    if (signalHistory.length > 10) signalHistory.pop();
+    signalHistory.unshift({ ...sig, time: new Date().toLocaleTimeString() });
+    if (signalHistory.length > 15) signalHistory.pop();
 
     const el = document.getElementById('ai-signal-history');
     if (!el) return;
     el.innerHTML = '';
-    signalHistory.slice(0,5).forEach(s => {
+    signalHistory.slice(0,6).forEach(s => {
         const row = document.createElement('div');
         row.style.cssText = 'background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:10px;';
-        row.innerHTML = `<div style="display:flex;justify-content:space-between;"><span style="color:${s.color||'var(--teal)'};font-weight:700;">${s.direction}</span><span class="badge badge-teal">${s.confidence}%</span></div><div style="color:var(--muted);margin-top:2px;">${s.label}</div>`;
+        row.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span style="color:${s.color||'var(--teal)'};font-weight:700;">${s.direction}</span>
+                <span class="badge badge-teal">${s.confidence}%</span>
+            </div>
+            <div style="color:var(--muted);margin-top:2px;display:flex;justify-content:space-between;">
+                <span>${s.reason || s.label || ''}</span>
+                <span style="color:var(--dim);">${s.time || ''}</span>
+            </div>`;
         el.appendChild(row);
     });
 }
@@ -1310,57 +1464,89 @@ function runFullScan() {
     const bestBox   = document.getElementById('best-signal-content');
     if (!container) return;
 
-    // Subscribe to all markets for data
+    // Subscribe to all markets
     ALL_MKTS.forEach(sym => subscribeDigitFeed(sym));
 
+    // Build results with ALL signals per market
     const results = ALL_MKTS.map(sym => ({
         sym,
-        signal: generateSignal(sym),
-        data:   digitData[sym] || { ticks: 0 },
-        state:  classifyMarket(sym)
+        signal:     generateSignal(sym),
+        topSignals: getTopSignals(sym, 4),
+        data:       digitData[sym] || { ticks: 0 },
+        state:      classifyMarket(sym)
     })).sort((a,b) => (b.signal?.confidence||0) - (a.signal?.confidence||0));
 
-    // Best opportunity
+    // ── Best opportunity box ──
     const best = results[0];
     if (bestBox) {
         if (best.signal && best.signal.confidence > 0) {
+            const topSigs = best.topSignals || [];
+            const sigsHtml = topSigs.map(s => `
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:5px 8px;background:var(--bg3);border-radius:6px;cursor:pointer;"
+                     onclick="applySignalToBot(${JSON.stringify(s).replace(/"/g,'&quot;')})">
+                    <span style="font-size:12px;font-weight:700;color:${s.color};">${s.direction}</span>
+                    <div style="display:flex;align-items:center;gap:6px;">
+                        <span style="font-size:10px;color:var(--muted);">${s.confidence}%</span>
+                        <span style="font-size:10px;background:${s.color}22;color:${s.color};padding:2px 6px;border-radius:4px;font-weight:700;">Apply</span>
+                    </div>
+                </div>`).join('');
+
             bestBox.innerHTML = `
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-                    <span style="font-size:14px;font-weight:900;color:var(--text);">${best.signal.label}</span>
-                    <span class="badge badge-teal">${best.signal.confidence}% Win Probability</span>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+                    <div>
+                        <div style="font-size:13px;font-weight:900;color:var(--text);">🥇 ${best.signal.label}</div>
+                        <div style="font-size:10px;color:var(--muted);margin-top:2px;">${best.state.label} | ${best.signal.totalTicks} real ticks</div>
+                    </div>
+                    <span class="badge badge-teal" style="font-size:12px;padding:4px 10px;">${best.signal.confidence}%</span>
                 </div>
-                <div style="font-size:16px;font-weight:900;color:${best.signal.color||'var(--teal)'};margin-bottom:6px;">${best.signal.direction}</div>
-                <div style="font-size:11px;color:var(--muted);">${best.signal.reason}</div>
-                <div style="font-size:11px;color:var(--muted);margin-top:4px;">State: ${best.state.label} | ${best.signal.totalTicks} real ticks | Hot: ${best.signal.hotDigit} | Cold: ${best.signal.coldDigit}</div>
-                <button onclick="applyBestSignal()" class="btn btn-teal" style="margin-top:10px;padding:7px 16px;font-size:11px;">✅ Apply to Bot</button>`;
+                <div style="font-size:15px;font-weight:900;color:${best.signal.color};margin-bottom:6px;">${best.signal.direction}</div>
+                <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">${best.signal.reason} | Hot: <b style="color:var(--green);">${best.signal.hotDigit}</b> Cold: <b style="color:var(--red);">${best.signal.coldDigit}</b></div>
+                ${topSigs.length > 1 ? `<div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:6px;">All Signals for this market:</div><div style="display:flex;flex-direction:column;gap:4px;">${sigsHtml}</div>` : ''}
+                <button onclick="applyBestSignal()" class="btn btn-teal" style="margin-top:12px;padding:8px 20px;font-size:12px;width:100%;">✅ Apply Best Signal to Bot</button>`;
         } else {
-            bestBox.innerHTML = '<div style="color:var(--muted);font-size:12px;">Not enough data yet. Markets are loading tick history...</div>';
+            bestBox.innerHTML = '<div style="color:var(--muted);font-size:12px;">Loading tick data... Each market needs 50+ ticks. Please wait.</div>';
         }
     }
 
-    // All results grid
+    // ── All markets grid ──
     container.innerHTML = '';
     results.forEach((r, idx) => {
-        const sig   = r.signal;
-        const color = sig ? (sig.color || 'var(--teal)') : 'var(--border)';
-        const card  = document.createElement('div');
+        const sig      = r.signal;
+        const topSigs  = r.topSignals || [];
+        const color    = sig ? (sig.color || 'var(--teal)') : 'var(--border)';
+        const medals   = ['🥇','🥈','🥉'];
+
+        const card = document.createElement('div');
         card.className = 'scanner-signal' + (sig && sig.confidence >= 75 ? ' strong' : sig && sig.confidence >= 60 ? ' medium' : '');
         card.style.borderColor = color;
-        card.style.cursor = 'pointer';
-        card.onclick = () => {
-            if (sig) applySignalToBot(sig);
-        };
+
+        // Build mini signal list
+        const miniSigs = topSigs.slice(0,3).map(s =>
+            `<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid var(--border);">
+                <span style="font-size:10px;color:${s.color};font-weight:700;">${s.direction}</span>
+                <span style="font-size:9px;color:var(--muted);">${s.confidence}%
+                    <span onclick="event.stopPropagation();applySignalToBot(${JSON.stringify(s).replace(/"/g,'&quot;')})"
+                          style="color:var(--teal);cursor:pointer;margin-left:4px;font-weight:700;">Apply</span>
+                </span>
+            </div>`
+        ).join('');
+
         card.innerHTML = `
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
                 <div style="display:flex;align-items:center;gap:5px;">
-                    <span>${idx===0?'🥇':idx===1?'🥈':idx===2?'🥉':'📊'}</span>
+                    <span>${medals[idx] || '📊'}</span>
                     <span style="font-size:12px;font-weight:900;">${MKT[r.sym]||r.sym}</span>
                 </div>
-                ${sig ? `<span class="badge badge-teal">${sig.confidence}%</span>` : ''}
+                <div style="display:flex;align-items:center;gap:5px;">
+                    ${sig ? `<span class="badge badge-teal" style="font-size:10px;">${sig.confidence}%</span>` : ''}
+                    <span style="font-size:9px;color:var(--dim);">${r.data.ticks}t</span>
+                </div>
             </div>
-            <div style="font-size:13px;font-weight:900;color:${color};margin-bottom:4px;">${sig ? sig.direction : 'No clear signal'}</div>
-            <div style="font-size:10px;color:var(--muted);">${r.state.label}</div>
-            <div style="font-size:9px;color:var(--dim);margin-top:3px;">${r.data.ticks} ticks${sig?` | ${sig.reason}`:''}</div>`;
+            <div style="font-size:13px;font-weight:900;color:${color};margin-bottom:4px;">${sig ? sig.direction : 'Collecting data...'}</div>
+            <div style="font-size:9px;color:var(--muted);margin-bottom:6px;">${r.state.label}${sig ? ' | ' + sig.reason : ''}</div>
+            ${miniSigs ? `<div style="margin-top:4px;">${miniSigs}</div>` : ''}`;
+
+        card.onclick = () => { if (sig) applySignalToBot(sig); };
         container.appendChild(card);
     });
 }
@@ -1375,17 +1561,34 @@ function applyBestSignal() {
 function applySignalToBot(sig) {
     if (!sig) return;
 
-    // Update bot settings to match signal
+    // Parse if passed as string from onclick
+    if (typeof sig === 'string') {
+        try { sig = JSON.parse(sig); } catch(e) { return; }
+    }
+
     const mktSel  = document.getElementById('bot-market');
     const typeSel = document.getElementById('bot-type');
-    if (mktSel)  mktSel.value  = sig.symbol;
+    const predEl  = document.getElementById('bot-pred');
+
+    // Apply market if signal has one
+    if (sig.symbol && mktSel) mktSel.value = sig.symbol;
+
+    // Apply trade type
     if (typeSel) { typeSel.value = sig.type; onTypeChange(); }
+
+    // Apply direction
     selectDir(sig.botDirection);
+
+    // Apply prediction/barrier value for over_under
+    if (sig.pred !== null && sig.pred !== undefined && predEl) {
+        predEl.value = sig.pred;
+    }
 
     updateInfoBar();
     updateActiveBotName();
-    log(`🧠 AI applied signal: ${sig.label} | ${sig.direction} | ${sig.confidence}% confidence`, 'i');
-    notify("AI Signal Applied ✅", `${sig.label}\n${sig.direction} — ${sig.confidence}% win probability`, 'ok');
+    log(`🧠 Applied: ${sig.label||sig.symbol||''} | ${sig.direction} | Pred: ${sig.pred!==null&&sig.pred!==undefined?sig.pred:'—'} | ${sig.confidence}%`, 'i');
+    notify("AI Signal Applied ✅", `${sig.direction}
+Confidence: ${sig.confidence}%${sig.pred!==null&&sig.pred!==undefined?' | Barrier: '+sig.pred:''}`, 'ok');
     switchTab('bot');
 }
 
