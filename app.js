@@ -367,6 +367,7 @@ async function openWS() {
 
         derivWS.onclose = () => {
             updateConnStatus(false);
+            clearInterval(pingInterval);
             log("WS closed. Will reconnect...", 'x');
             scheduleReconnect();
         };
@@ -420,7 +421,19 @@ function onConnected() {
 
     // Start AI scan loop
     startAILoop();
+    startKeepAlivePing();
     log("✅ Connected to Deriv API", 'i');
+}
+
+// Keep-alive ping — Amy's recommendation to prevent silent disconnects
+let pingInterval = null;
+function startKeepAlivePing() {
+    clearInterval(pingInterval);
+    pingInterval = setInterval(() => {
+        if (derivWS && derivWS.readyState === WebSocket.OPEN) {
+            derivWS.send(JSON.stringify({ ping: 1, req_id: nextReqId() }));
+        }
+    }, 30000);
 }
 
 // ================================================================
@@ -487,15 +500,20 @@ function routeMsg(r) {
 const ROLLING_WINDOW = 1000;
 
 function extractLastDigit(quote, pipSize) {
-    // Amy tip: align to pip_size for correct last digit
-    // For synthetics, last digit is last decimal at pip precision
+    // Amy's exact method: normalize to pip_size, then scan for last numeric char
+    let priceStr;
     if (pipSize) {
         const decimals = pipSize.toString().split('.')[1]?.length || 0;
-        const fixed    = parseFloat(quote).toFixed(decimals);
-        return parseInt(fixed.slice(-1));
+        priceStr = parseFloat(quote).toFixed(decimals);
+    } else {
+        priceStr = String(quote);
     }
-    // Default: last character of price string
-    return parseInt(quote.toString().replace('.','').slice(-1));
+    // Scan from the end for the last digit character (handles any format safely)
+    for (let i = priceStr.length - 1; i >= 0; i--) {
+        const ch = priceStr[i];
+        if (ch >= '0' && ch <= '9') return parseInt(ch, 10);
+    }
+    return NaN;
 }
 
 function processRealTick(symbol, quote, pipSize) {
