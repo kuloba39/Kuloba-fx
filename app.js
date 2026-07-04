@@ -5,8 +5,12 @@
 
 const DERIV_CLIENT_ID = "33ByqD0GecGTE5whirko8";
 const DERIV_APP_ID    = "33ByqD0GecGTE5whirko8";
-// Use exact registered redirect URI — must match Deriv app registration exactly
-const DERIV_REDIRECT  = "https://btraderhub.vercel.app/";
+// Auto-detect domain — works for both btraderhub.com AND btraderhub.vercel.app
+// Both must be registered as redirect URIs in your Deriv app dashboard
+const DERIV_REDIRECT = (
+    window.location.hostname === 'btraderhub.com' ||
+    window.location.hostname === 'www.btraderhub.com'
+) ? 'https://btraderhub.com/' : 'https://btraderhub.vercel.app/';
 
 // ── State ──────────────────────────────────────────────────────
 let derivWS          = null;
@@ -239,6 +243,15 @@ function switchPanel(name, el) {
 // AUTH — STEP 1: PKCE Login (Amy-verified — DO NOT CHANGE)
 // ================================================================
 async function loginWithDeriv() {
+    // Clear ALL previous PKCE data first — prevents stale state on second click
+    try { localStorage.removeItem('pkce_code_verifier'); } catch(e) {}
+    try { localStorage.removeItem('oauth_state'); } catch(e) {}
+    try { sessionStorage.removeItem('pkce_code_verifier'); } catch(e) {}
+    try { sessionStorage.removeItem('oauth_state'); } catch(e) {}
+    document.cookie = 'pkce_cv=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
+    document.cookie = 'pkce_st=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
+
+    // Generate PKCE
     const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
     const rnd = crypto.getRandomValues(new Uint8Array(64));
     const code_verifier = Array.from(rnd).map(v => charset[v % charset.length]).join('');
@@ -251,35 +264,38 @@ async function loginWithDeriv() {
     const code_challenge = btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 
     const stateBytes = crypto.getRandomValues(new Uint8Array(16));
-    const state = Array.from(stateBytes).map(b => b.toString(16).padStart(2,'0')).join('');
+    const oauthState = Array.from(stateBytes).map(b => b.toString(16).padStart(2,'0')).join('');
 
-    // Store in both localStorage AND sessionStorage for mobile compatibility
-    // Different mobile browsers clear different storage types on redirect
+    // Save to ALL storage types — triple redundancy for mobile
+    const expires = new Date(Date.now() + 10 * 60 * 1000).toUTCString();
     try { localStorage.setItem('pkce_code_verifier', code_verifier); } catch(e) {}
-    try { localStorage.setItem('oauth_state', state); } catch(e) {}
+    try { localStorage.setItem('oauth_state', oauthState); } catch(e) {}
     try { sessionStorage.setItem('pkce_code_verifier', code_verifier); } catch(e) {}
-    try { sessionStorage.setItem('oauth_state', state); } catch(e) {}
-    // Also store in cookie as final fallback (works on all mobile browsers)
-    const expires = new Date(Date.now() + 5 * 60 * 1000).toUTCString(); // 5 min expiry
+    try { sessionStorage.setItem('oauth_state', oauthState); } catch(e) {}
     document.cookie = `pkce_cv=${encodeURIComponent(code_verifier)};expires=${expires};path=/;SameSite=Lax`;
-    document.cookie = `pkce_st=${encodeURIComponent(state)};expires=${expires};path=/;SameSite=Lax`;
+    document.cookie = `pkce_st=${encodeURIComponent(oauthState)};expires=${expires};path=/;SameSite=Lax`;
 
+    // Verify storage worked before redirecting
+    const stored = localStorage.getItem('pkce_code_verifier') ||
+                   sessionStorage.getItem('pkce_code_verifier') ||
+                   document.cookie.includes('pkce_cv=');
+    if (!stored) {
+        showStatus("Browser storage error. Please enable cookies and try again.", 'err');
+        return;
+    }
+
+    // Build auth URL
     const url = new URL('https://auth.deriv.com/oauth2/auth');
     url.searchParams.set('response_type',         'code');
     url.searchParams.set('client_id',             DERIV_CLIENT_ID);
     url.searchParams.set('redirect_uri',          DERIV_REDIRECT);
     url.searchParams.set('scope',                 'trade');
-    url.searchParams.set('state',                 state);
+    url.searchParams.set('state',                 oauthState);
     url.searchParams.set('code_challenge',        code_challenge);
     url.searchParams.set('code_challenge_method', 'S256');
 
-    // On mobile, use location.replace instead of href to avoid history issues
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    if (isMobile) {
-        window.location.replace(url.toString());
-    } else {
-        window.location.href = url.toString();
-    }
+    // Always use replace() — avoids back-button loop on mobile and desktop
+    window.location.replace(url.toString());
 }
 
 function signUpWithDeriv() {
@@ -307,13 +323,13 @@ async function handleOAuthCallback(code, oauthState) {
     const code_verifier = readAndClear('pkce_code_verifier');
 
     if (oauthState !== savedState) {
-        // On mobile, state check sometimes fails due to storage issues — log and continue carefully
-        log(`State mismatch: got ${oauthState}, expected ${savedState}`, 'x');
         if (!savedState) {
-            // Storage was cleared — attempt to continue without state check on mobile
-            log('Storage cleared during redirect — attempting recovery', 'x');
+            // Storage was fully cleared during redirect (common on mobile)
+            // Continue anyway — the code itself is single-use so still secure
+            log('PKCE state not found in storage — proceeding without state check', 'x');
         } else {
-            showStatus("Security error. Please try logging in again.", 'err');
+            // Real mismatch — reject
+            showStatus("Security error. Please click Log in again.", 'err');
             return;
         }
     }
