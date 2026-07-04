@@ -5,7 +5,9 @@
 
 const DERIV_CLIENT_ID = "33ByqD0GecGTE5whirko8";
 const DERIV_APP_ID    = "33ByqD0GecGTE5whirko8";
-const DERIV_REDIRECT  = "https://btraderhub.vercel.app/";
+// Amy fix: use current origin so redirect always matches registered URI
+// Works for both btraderhub.vercel.app AND any custom domain
+const DERIV_REDIRECT  = window.location.origin + "/";
 
 // ── State ──────────────────────────────────────────────────────
 let derivWS          = null;
@@ -157,6 +159,9 @@ window.addEventListener('load', async () => {
     onTypeChange();
     updateInfoBar();
 
+    // Start public WebSocket immediately for digit stats (no auth needed)
+    connectPublicWS();
+
     const params = new URLSearchParams(window.location.search);
     const code   = params.get('code');
     const state  = params.get('state');
@@ -232,8 +237,9 @@ async function loginWithDeriv() {
     const stateBytes = crypto.getRandomValues(new Uint8Array(16));
     const state = Array.from(stateBytes).map(b => b.toString(16).padStart(2,'0')).join('');
 
-    sessionStorage.setItem('pkce_code_verifier', code_verifier);
-    sessionStorage.setItem('oauth_state', state);
+    // Amy fix: use localStorage not sessionStorage — mobile browsers reset sessionStorage on redirect
+    localStorage.setItem('pkce_code_verifier', code_verifier);
+    localStorage.setItem('oauth_state', state);
 
     const url = new URL('https://auth.deriv.com/oauth2/auth');
     url.searchParams.set('response_type',         'code');
@@ -255,10 +261,11 @@ function signUpWithDeriv() {
 // AUTH — STEP 2: Callback
 // ================================================================
 async function handleOAuthCallback(code, state) {
-    const savedState    = sessionStorage.getItem('oauth_state');
-    const code_verifier = sessionStorage.getItem('pkce_code_verifier');
-    sessionStorage.removeItem('oauth_state');
-    sessionStorage.removeItem('pkce_code_verifier');
+    // Amy fix: read from localStorage (mobile-safe)
+    const savedState    = localStorage.getItem('oauth_state');
+    const code_verifier = localStorage.getItem('pkce_code_verifier');
+    localStorage.removeItem('oauth_state');
+    localStorage.removeItem('pkce_code_verifier');
 
     if (state !== savedState) { showStatus("Security error. Please try again.", 'err'); return; }
     showStatus("Authorizing...", 'info');
@@ -422,9 +429,9 @@ function onConnected() {
         req_id:         nextReqId()
     }));
 
-    // Subscribe to digit feeds
-    subscribeDigitFeed(currentDigitMkt);
-    subscribeDigitFeed(document.getElementById('bot-market')?.value || 'R_10');
+    // Digit stats run on public WS (already started on page load)
+    // Ensure public WS is connected
+    if (!publicWsReady) connectPublicWS();
 
     // Start AI scan loop
     startAILoop();
@@ -453,12 +460,11 @@ function routeMsg(r) {
         if (el) el.textContent = `${parseFloat(r.balance.balance).toFixed(2)} ${r.balance.currency}`;
     }
 
-    // Tick — REAL data only
+    // Tick and history from authenticated WS — routed to stub
+    // (real digit data comes from public WS)
     if (r.msg_type === 'tick' && r.tick) {
         processRealTick(r.tick.symbol, r.tick.quote);
     }
-
-    // Tick history — REAL bulk data
     if (r.msg_type === 'history' && r.history) {
         const sym = r.echo_req?.ticks_history;
         if (sym) processHistory(sym, r.history);
@@ -503,156 +509,244 @@ function routeMsg(r) {
 // ================================================================
 // REAL TICK PROCESSING — no fake data ever
 // ================================================================
-// Rolling window size — matches Deriv site exactly
-const ROLLING_WINDOW = 1000;
+// ================================================================
+// DIGIT STATS — Amy's verified implementation (public WS)
+// Uses separate public WebSocket for market data
+// OTP authenticated WS used only for trading
+// ================================================================
 
-function extractLastDigit(quote, pipSize) {
-    // Amy's exact method: normalize to pip_size, then scan for last numeric char
-    let priceStr;
-    if (pipSize) {
-        const decimals = pipSize.toString().split('.')[1]?.length || 0;
-        priceStr = parseFloat(quote).toFixed(decimals);
-    } else {
-        priceStr = String(quote);
-    }
-    // Scan from the end for the last digit character (handles any format safely)
-    for (let i = priceStr.length - 1; i >= 0; i--) {
-        const ch = priceStr[i];
-        if (ch >= '0' && ch <= '9') return parseInt(ch, 10);
+const ROLLING_WINDOW = 1000;
+const PUBLIC_WS_URL  = 'wss://api.derivws.com/trading/v1/options/ws/public';
+
+let publicWS      = null;
+let publicWsReady = false;
+let pubNextId     = 1;
+function pubReqId() { return pubNextId++; }
+
+// Amy's exact extractLastDigit — normalizes by decimals from pip_size
+function extractLastDigit(quote, decimals) {
+    const s = Number(quote).toFixed(decimals || 0);
+    for (let i = s.length - 1; i >= 0; i--) {
+        const ch = s[i];
+        if (ch >= '0' && ch <= '9') return ch.charCodeAt(0) - 48;
     }
     return NaN;
 }
 
-function processRealTick(symbol, quote, pipSize) {
-    const digit = extractLastDigit(quote, pipSize);
-    if (isNaN(digit)) return;
-
-    // Initialize rolling window structure
-    if (!digitData[symbol]) {
-        digitData[symbol] = {
-            window: [],      // rolling array of last 1000 digits
-            counts: new Array(10).fill(0),
-            ticks:  0
-        };
+// Amy's addDigit — exact rolling window implementation
+function addDigitToRolling(sym, d) {
+    if (!digitData[sym]) {
+        digitData[sym] = { window: [], counts: Array(10).fill(0), ticks: 0, decimals: 2 };
     }
-    if (!marketMemory[symbol]) {
-        marketMemory[symbol] = { prices: [], digits: [], ticks: 0 };
+    const st = digitData[sym];
+    st.window.push(d);
+    st.counts[d]++;
+    if (st.window.length > ROLLING_WINDOW) {
+        const removed = st.window.shift();
+        st.counts[removed]--;
     }
+    st.ticks = st.window.length;
+}
 
-    const d  = digitData[symbol];
-    const mm = marketMemory[symbol];
+// Connect to public WebSocket for digit stats (separate from trading WS)
+function connectPublicWS() {
+    if (publicWS && publicWS.readyState === WebSocket.OPEN) return;
 
-    // Rolling window — push new digit, pop oldest if over 1000
-    d.window.push(digit);
-    if (d.window.length > ROLLING_WINDOW) {
-        const removed = d.window.shift();
-        d.counts[removed]--;  // remove oldest from count
-    }
-    d.counts[digit]++;
-    d.ticks = d.window.length; // exact rolling count
+    publicWS = new WebSocket(PUBLIC_WS_URL);
 
-    // Market memory for AI analysis
-    mm.prices.push(quote);
-    mm.digits.push(digit);
-    mm.ticks++;
-    if (mm.prices.length > 500) { mm.prices.shift(); mm.digits.shift(); }
+    publicWS.onopen = () => {
+        publicWsReady = true;
+        log('📡 Public WS connected for digit stats', 'i');
 
-    // Consecutive tracking
-    if (digit === lastDigit) consecutiveSame++;
-    else { consecutiveSame = 1; lastDigit = digit; }
+        // Step 1: Get active_symbols to read pip_size per symbol
+        publicWS.send(JSON.stringify({
+            active_symbols: 'brief',
+            req_id: pubReqId()
+        }));
 
-    // Update digit stats tab
-    if (symbol === currentDigitMkt) {
-        const lastEl = document.getElementById('d-last');
-        const tickEl = document.getElementById('d-ticks');
-        if (lastEl) lastEl.textContent = digit;
-        if (tickEl) tickEl.textContent = d.ticks;
-        renderDigitCircles(symbol);
-        updateDigitStats(symbol);
-    }
+        // Keep-alive ping every 30s
+        setInterval(() => {
+            if (publicWS && publicWS.readyState === WebSocket.OPEN) {
+                publicWS.send(JSON.stringify({ ping: 1 }));
+            }
+        }, 30000);
+    };
 
-    // Bot engine
+    publicWS.onmessage = (ev) => {
+        const data = JSON.parse(ev.data);
+        if (data.error) {
+            log(`📡 Public WS error: ${data.error.code} ${data.error.message}`, 'x');
+            return;
+        }
+
+        // Step 2: active_symbols — read pip_size and seed each symbol
+        if (data.msg_type === 'active_symbols') {
+            const bySymbol = {};
+            (data.active_symbols || []).forEach(s => {
+                if (ALL_MKTS.includes(s.underlying_symbol)) {
+                    bySymbol[s.underlying_symbol] = s;
+                }
+            });
+
+            ALL_MKTS.forEach(sym => {
+                const info = bySymbol[sym];
+                if (!info) return;
+
+                const pipSize  = info.pip_size;
+                const decimals = String(pipSize).includes('.')
+                    ? String(pipSize).split('.')[1].length
+                    : 0;
+
+                // Initialize with correct decimals from Deriv
+                digitData[sym] = {
+                    window:   [],
+                    counts:   Array(10).fill(0),
+                    ticks:    0,
+                    decimals: decimals
+                };
+                activePipSizes[sym] = pipSize;
+
+                // Step 3: Warm up with ticks_history (1000 ticks)
+                publicWS.send(JSON.stringify({
+                    ticks_history: sym,
+                    end:           'latest',
+                    count:         ROLLING_WINDOW,
+                    style:         'ticks',
+                    req_id:        pubReqId()
+                }));
+            });
+            return;
+        }
+
+        // Step 4: History response — seed rolling window
+        if (data.msg_type === 'history' && data.history) {
+            const sym = data.echo_req?.ticks_history;
+            if (!sym || !digitData[sym]) return;
+
+            const st     = digitData[sym];
+            const quotes = data.history.prices || [];
+
+            // Reset and rebuild from history using pip_size decimals
+            st.window = [];
+            st.counts = Array(10).fill(0);
+
+            quotes.forEach(price => {
+                const d = extractLastDigit(price, st.decimals);
+                if (!isNaN(d)) addDigitToRolling(sym, d);
+            });
+
+            log(`📊 ${MKT[sym]||sym}: ${st.ticks} ticks seeded`, 'i');
+
+            // Step 5: Subscribe to live ticks after warmup
+            publicWS.send(JSON.stringify({
+                ticks:     sym,
+                subscribe: 1,
+                req_id:    pubReqId()
+            }));
+
+            // Update UI if this is the active digit market
+            if (sym === currentDigitMkt) {
+                renderDigitCircles(sym);
+                updateDigitStats(sym);
+            }
+            return;
+        }
+
+        // Step 6: Live tick — update rolling window
+        if (data.msg_type === 'tick' && data.tick) {
+            const sym = data.tick.symbol;
+            const st  = digitData[sym];
+            if (!st) return;
+
+            // Use tick.pip_size if available (integer = decimals), else stored decimals
+            const decimals = Number.isInteger(data.tick.pip_size)
+                ? data.tick.pip_size
+                : st.decimals;
+
+            const d = extractLastDigit(data.tick.quote, decimals);
+            if (isNaN(d)) return;
+
+            addDigitToRolling(sym, d);
+
+            // Update market memory for AI
+            if (!marketMemory[sym]) marketMemory[sym] = { prices: [], digits: [], ticks: 0 };
+            const mm = marketMemory[sym];
+            mm.prices.push(data.tick.quote);
+            mm.digits.push(d);
+            mm.ticks++;
+            if (mm.prices.length > 500) { mm.prices.shift(); mm.digits.shift(); }
+
+            // Consecutive tracking
+            if (d === lastDigit) consecutiveSame++;
+            else { consecutiveSame = 1; lastDigit = d; }
+
+            // Update digit stats UI
+            if (sym === currentDigitMkt) {
+                const lastEl = document.getElementById('d-last');
+                const tickEl = document.getElementById('d-ticks');
+                if (lastEl) lastEl.textContent = d;
+                if (tickEl) tickEl.textContent = st.ticks;
+                renderDigitCircles(sym);
+                updateDigitStats(sym);
+            }
+
+            // AI mini panel update
+            if (sym === document.getElementById('bot-market')?.value) {
+                updateAIMini(sym);
+            }
+
+            // Bot engine still uses authenticated WS for trading
+            // but reads digit from public WS tick
+            const botMkt = document.getElementById('bot-market')?.value;
+            if (isBotRunning && sym === botMkt) {
+                runBotLogic(d, data.tick.quote);
+            }
+        }
+    };
+
+    publicWS.onerror = (e) => {
+        log('📡 Public WS error', 'x');
+        console.error(e);
+    };
+
+    publicWS.onclose = () => {
+        publicWsReady = false;
+        log('📡 Public WS closed. Reconnecting in 2s...', 'x');
+        // Amy: reset state and reconnect to avoid gaps
+        setTimeout(() => {
+            ALL_MKTS.forEach(sym => {
+                if (digitData[sym]) {
+                    digitData[sym].window = [];
+                    digitData[sym].counts = Array(10).fill(0);
+                    digitData[sym].ticks  = 0;
+                }
+            });
+            connectPublicWS();
+        }, 2000);
+    };
+}
+
+// Legacy function — now routes to public WS
+function subscribeDigitFeed(symbol) {
+    // Digit feeds handled by public WS — just ensure it's connected
+    if (!publicWsReady) connectPublicWS();
+}
+
+// processRealTick still called from authenticated WS for bot logic
+function processRealTick(symbol, quote) {
+    // Digits now handled by public WS — this just feeds bot if needed
     const botMkt = document.getElementById('bot-market')?.value;
     if (isBotRunning && symbol === botMkt) {
-        runBotLogic(digit, quote);
-    }
-
-    // AI sidebar mini update
-    if (symbol === document.getElementById('bot-market')?.value) {
-        updateAIMini(symbol);
+        const st  = digitData[symbol];
+        const dec = st?.decimals || 2;
+        const d   = extractLastDigit(quote, dec);
+        if (!isNaN(d)) runBotLogic(d, quote);
     }
 }
 
+// processHistory — now handled inside public WS onmessage
 function processHistory(symbol, history) {
-    if (!history?.prices || history.prices.length === 0) return;
-
-    // Initialize with rolling window structure
-    if (!digitData[symbol]) {
-        digitData[symbol] = { window: [], counts: new Array(10).fill(0), ticks: 0 };
-    }
-    if (!marketMemory[symbol]) {
-        marketMemory[symbol] = { prices: [], digits: [], ticks: 0 };
-    }
-
-    const d  = digitData[symbol];
-    const mm = marketMemory[symbol];
-
-    // Get pip_size from active symbols if available
-    const pipSize = activePipSizes[symbol] || null;
-
-    // Seed rolling window from history
-    // Take last ROLLING_WINDOW prices to match Deriv site exactly
-    const prices = history.prices.slice(-ROLLING_WINDOW);
-
-    // Reset and rebuild from history
-    d.window  = [];
-    d.counts  = new Array(10).fill(0);
-
-    prices.forEach(price => {
-        const digit = extractLastDigit(price, pipSize);
-        if (!isNaN(digit)) {
-            d.window.push(digit);
-            d.counts[digit]++;
-        }
-    });
-    d.ticks = d.window.length;
-
-    // Market memory
-    mm.prices = history.prices.slice(-500);
-    mm.digits = mm.prices.map(p => extractLastDigit(p, pipSize));
-    mm.ticks  = mm.prices.length;
-
-    log(`📊 ${MKT[symbol]||symbol}: ${d.ticks} ticks loaded (rolling window)`, 'i');
-
-    if (symbol === currentDigitMkt) {
-        renderDigitCircles(symbol);
-        updateDigitStats(symbol);
-    }
-    updateAIMini(symbol);
-}
-
-function subscribeDigitFeed(symbol) {
-    if (!derivWS || derivWS.readyState !== WebSocket.OPEN) return;
-    if (activeTickSubs.has(symbol)) return;
-
-    // STEP 1: Seed with 1000 ticks history (Amy confirmed 1000 matches Deriv site)
-    derivWS.send(JSON.stringify({
-        ticks_history: symbol,
-        end:           "latest",
-        count:         1000,
-        style:         "ticks",
-        req_id:        nextReqId()
-    }));
-
-    // STEP 2: Subscribe to live ticks separately
-    derivWS.send(JSON.stringify({
-        ticks:     symbol,
-        subscribe: 1,
-        req_id:    nextReqId()
-    }));
-
-    activeTickSubs.add(symbol);
-    log(`📡 Subscribed: ${MKT[symbol]||symbol} (1000 tick history + live)`, 'i');
+    // Handled by public WS — kept as stub to avoid errors
 }
 
 // ================================================================
@@ -1644,14 +1738,17 @@ function toggleAIAuto() {
 // ================================================================
 function changeDigitMarket(symbol) {
     currentDigitMkt = symbol;
-    subscribeDigitFeed(symbol);
+    // Data comes from public WS — just update display
     const data = digitData[symbol];
     if (data && data.ticks > 0) {
         renderDigitCircles(symbol);
         updateDigitStats(symbol);
+        const lastEl = document.getElementById('d-last');
+        const tickEl = document.getElementById('d-ticks');
+        if (tickEl) tickEl.textContent = data.ticks;
     } else {
         const c = document.getElementById('d-circles');
-        if (c) c.innerHTML = '<div style="font-size:11px;color:var(--dim);padding:10px;">Loading real tick data...</div>';
+        if (c) c.innerHTML = '<div style="font-size:11px;color:var(--dim);padding:10px;">Loading tick data from Deriv... please wait.</div>';
     }
 }
 
