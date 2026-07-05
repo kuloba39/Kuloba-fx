@@ -1444,6 +1444,19 @@ function generateSignal(symbol) {
         });
     }
 
+    // ── ONLY UPS / ONLY DOWNS — stronger momentum ──
+    if (Math.abs(momentum) > 0.4) {
+        const dir  = momentum > 0 ? 'ups' : 'downs';
+        const conf = Math.min(85, Math.round(52 + Math.abs(momentum) * 25));
+        signals.push({
+            type:'only_ups_downs', botDirection:dir,
+            direction: dir === 'ups' ? 'Only Ups' : 'Only Downs',
+            confidence: conf,
+            reason: `Strong ${momentum>0?'upward':'downward'} trend detected`,
+            color: momentum > 0 ? 'var(--teal)' : 'var(--red)', pred: null
+        });
+    }
+
     // ── HOT DIGIT MATCHES ──
     // If a digit appears far more than expected (>14% vs expected 10%)
     ranked.slice(0, 3).forEach(({d, c}) => {
@@ -1478,24 +1491,55 @@ function generateSignal(symbol) {
 // Return top N signals for a symbol (used by scanner tab)
 function getTopSignals(symbol, n = 5) {
     const data = digitData[symbol];
+    const mm   = marketMemory[symbol];
     if (!data || data.ticks < 50) return [];
 
-    const counts = data.counts;
-    const total  = Math.max(data.ticks, 1);
+    const counts  = data.counts;
+    const total   = Math.max(data.ticks, 1);
     const signals = [];
 
-    // Even/Odd
-    const evenPct = (counts.filter((_,i)=>i%2===0).reduce((a,b)=>a+b,0)/total)*100;
-    if (evenPct > 52) signals.push({ direction:`Even Only`, confidence:Math.min(93,Math.round(evenPct)), type:'even_odd', botDirection:'even', color:'var(--green)', pred:null });
-    if (100-evenPct > 52) signals.push({ direction:`Odd Only`, confidence:Math.min(93,Math.round(100-evenPct)), type:'even_odd', botDirection:'odd', color:'var(--teal)', pred:null });
+    // ── EVEN / ODD ──
+    const evenCount = counts.filter((_,i) => i%2===0).reduce((a,b)=>a+b,0);
+    const evenPct   = (evenCount / total) * 100;
+    const oddPct    = 100 - evenPct;
+    if (evenPct > 52) signals.push({ direction:'Even Only', confidence:Math.min(93,Math.round(evenPct)), type:'even_odd', botDirection:'even', color:'var(--green)', pred:null, reason:`Even ${evenPct.toFixed(1)}% of ${total} ticks` });
+    if (oddPct  > 52) signals.push({ direction:'Odd Only',  confidence:Math.min(93,Math.round(oddPct)),  type:'even_odd', botDirection:'odd',  color:'var(--teal)',  pred:null, reason:`Odd ${oddPct.toFixed(1)}% of ${total} ticks` });
 
-    // Over/Under all barriers
+    // ── OVER / UNDER — all barriers 0-9 ──
     for (let b = 0; b <= 9; b++) {
         const overPct  = (counts.slice(b+1).reduce((a,c)=>a+c,0)/total)*100;
         const underPct = (counts.slice(0,b).reduce((a,c)=>a+c,0)/total)*100;
-        if (overPct > 52 && b < 9)  signals.push({ direction:`Over ${b}`,  confidence:Math.min(93,Math.round(overPct)),  type:'over_under', botDirection:'over',  color:'var(--blue)',   pred:b });
-        if (underPct > 52 && b > 0) signals.push({ direction:`Under ${b}`, confidence:Math.min(93,Math.round(underPct)), type:'over_under', botDirection:'under', color:'var(--purple)', pred:b });
+        if (overPct  > 52 && b < 9) signals.push({ direction:`Over ${b}`,  confidence:Math.min(93,Math.round(overPct)),  type:'over_under', botDirection:'over',  color:'var(--blue)',   pred:b, reason:`${overPct.toFixed(1)}% ticks above ${b}` });
+        if (underPct > 52 && b > 0) signals.push({ direction:`Under ${b}`, confidence:Math.min(93,Math.round(underPct)), type:'over_under', botDirection:'under', color:'var(--purple)', pred:b, reason:`${underPct.toFixed(1)}% ticks below ${b}` });
     }
+
+    // ── RISE / FALL — from price momentum ──
+    if (mm && mm.prices.length >= 20) {
+        const recent  = mm.prices.slice(-20);
+        const rising  = recent.filter((p,i) => i>0 && p>recent[i-1]).length;
+        const risePct = (rising / 19) * 100;
+        const fallPct = 100 - risePct;
+        if (risePct > 55) signals.push({ direction:'Rise Only', confidence:Math.min(90,Math.round(risePct)), type:'rise_fall', botDirection:'rise', color:'var(--green)', pred:null, reason:`Price rising ${risePct.toFixed(0)}% of last 20 ticks` });
+        if (fallPct > 55) signals.push({ direction:'Fall Only', confidence:Math.min(90,Math.round(fallPct)), type:'rise_fall', botDirection:'fall', color:'var(--red)',   pred:null, reason:`Price falling ${fallPct.toFixed(0)}% of last 20 ticks` });
+    }
+
+    // ── ONLY UPS / ONLY DOWNS — stronger momentum ──
+    if (mm && mm.prices.length >= 20) {
+        const recent  = mm.prices.slice(-20);
+        const rising  = recent.filter((p,i) => i>0 && p>recent[i-1]).length;
+        const risePct = (rising / 19) * 100;
+        if (risePct > 65) signals.push({ direction:'Only Ups',   confidence:Math.min(88,Math.round(risePct - 10)), type:'only_ups_downs', botDirection:'ups',   color:'var(--green)', pred:null, reason:`Strong upward momentum ${risePct.toFixed(0)}%` });
+        if (risePct < 35) signals.push({ direction:'Only Downs', confidence:Math.min(88,Math.round(100-risePct-10)), type:'only_ups_downs', botDirection:'downs', color:'var(--red)',   pred:null, reason:`Strong downward momentum ${(100-risePct).toFixed(0)}%` });
+    }
+
+    // ── HOT DIGIT MATCHES ──
+    const ranked = counts.map((c,d)=>({d,c})).sort((a,b)=>b.c-a.c);
+    ranked.slice(0,2).forEach(({d,c}) => {
+        const pct = (c/total)*100;
+        if (pct > 14) {
+            signals.push({ direction:`Matches ${d}`, confidence:Math.min(85,Math.round(pct*5)), type:'over_under', botDirection:'over', color:'var(--amber)', pred:d, reason:`Digit ${d} appeared ${pct.toFixed(1)}% (expected 10%)` });
+        }
+    });
 
     signals.sort((a,b) => b.confidence - a.confidence);
     return signals.slice(0, n);
