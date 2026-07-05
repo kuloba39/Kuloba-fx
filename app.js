@@ -165,16 +165,14 @@ window.addEventListener('load', async () => {
     // Start public WebSocket immediately for digit stats (no auth needed)
     connectPublicWS();
 
-    // Check for OAuth callback — robust detection for mobile browsers
-    const urlSearch = window.location.search || window.location.hash.replace('#','?');
-    const params    = new URLSearchParams(urlSearch);
-    const code      = params.get('code');
-    const oauthState = params.get('state');
-
-    if (code && oauthState) {
-        // Clean URL immediately before any processing
-        try { window.history.replaceState({}, document.title, window.location.pathname); } catch(e) {}
-        await handleOAuthCallback(code, oauthState);
+    // Check for access token set by callback.html after server-side exchange
+    const savedToken = sessionStorage.getItem('deriv_access_token');
+    if (savedToken) {
+        sessionStorage.removeItem('deriv_access_token');
+        sessionStorage.removeItem('deriv_token_expiry');
+        accessToken = savedToken;
+        showStatus("Token received. Loading accounts...", 'info');
+        await loadAccounts();
     }
 
     // Show risk disclaimer on first visit (merged here to avoid duplicate load events)
@@ -243,60 +241,33 @@ function switchPanel(name, el) {
 // AUTH — STEP 1: PKCE Login (Amy-verified — DO NOT CHANGE)
 // ================================================================
 async function loginWithDeriv() {
-    // Clear ALL previous PKCE data first — prevents stale state on second click
-    try { localStorage.removeItem('pkce_code_verifier'); } catch(e) {}
-    try { localStorage.removeItem('oauth_state'); } catch(e) {}
-    try { sessionStorage.removeItem('pkce_code_verifier'); } catch(e) {}
-    try { sessionStorage.removeItem('oauth_state'); } catch(e) {}
-    document.cookie = 'pkce_cv=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
-    document.cookie = 'pkce_st=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
+    showStatus("Starting secure login...", 'info');
+    try {
+        // Step 1: Get PKCE from server — no browser storage needed (Amy's fix)
+        const resp = await fetch('/api/oauth-start', { method: 'POST' });
+        if (!resp.ok) { showStatus("Login server error. Please try again.", 'err'); return; }
+        const cfg = await resp.json();
 
-    // Generate PKCE
-    const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
-    const rnd = crypto.getRandomValues(new Uint8Array(64));
-    const code_verifier = Array.from(rnd).map(v => charset[v % charset.length]).join('');
+        // Step 2: Build auth URL and redirect
+        const params = new URLSearchParams({
+            response_type:         'code',
+            client_id:             cfg.client_id,
+            redirect_uri:          cfg.redirect_uri,
+            scope:                 cfg.scope,
+            state:                 cfg.state,
+            code_challenge:        cfg.code_challenge,
+            code_challenge_method: cfg.code_challenge_method
+        });
 
-    const encoder = new TextEncoder();
-    const hash    = await crypto.subtle.digest('SHA-256', encoder.encode(code_verifier));
-    const bytes   = new Uint8Array(hash);
-    let bin = '';
-    for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
-    const code_challenge = btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+        // Always use replace() — avoids back-button issues on mobile
+        window.location.replace(`${cfg.authorization_endpoint}?${params.toString()}`);
 
-    const stateBytes = crypto.getRandomValues(new Uint8Array(16));
-    const oauthState = Array.from(stateBytes).map(b => b.toString(16).padStart(2,'0')).join('');
-
-    // Save to ALL storage types — triple redundancy for mobile
-    const expires = new Date(Date.now() + 10 * 60 * 1000).toUTCString();
-    try { localStorage.setItem('pkce_code_verifier', code_verifier); } catch(e) {}
-    try { localStorage.setItem('oauth_state', oauthState); } catch(e) {}
-    try { sessionStorage.setItem('pkce_code_verifier', code_verifier); } catch(e) {}
-    try { sessionStorage.setItem('oauth_state', oauthState); } catch(e) {}
-    document.cookie = `pkce_cv=${encodeURIComponent(code_verifier)};expires=${expires};path=/;SameSite=Lax`;
-    document.cookie = `pkce_st=${encodeURIComponent(oauthState)};expires=${expires};path=/;SameSite=Lax`;
-
-    // Verify storage worked before redirecting
-    const stored = localStorage.getItem('pkce_code_verifier') ||
-                   sessionStorage.getItem('pkce_code_verifier') ||
-                   document.cookie.includes('pkce_cv=');
-    if (!stored) {
-        showStatus("Browser storage error. Please enable cookies and try again.", 'err');
-        return;
+    } catch(err) {
+        showStatus("Connection error. Please try again.", 'err');
+        console.error(err);
     }
-
-    // Build auth URL
-    const url = new URL('https://auth.deriv.com/oauth2/auth');
-    url.searchParams.set('response_type',         'code');
-    url.searchParams.set('client_id',             DERIV_CLIENT_ID);
-    url.searchParams.set('redirect_uri',          DERIV_REDIRECT);
-    url.searchParams.set('scope',                 'trade');
-    url.searchParams.set('state',                 oauthState);
-    url.searchParams.set('code_challenge',        code_challenge);
-    url.searchParams.set('code_challenge_method', 'S256');
-
-    // Always use replace() — avoids back-button loop on mobile and desktop
-    window.location.replace(url.toString());
 }
+
 
 function signUpWithDeriv() {
     window.location.href = "https://track.deriv.com/_Yi8lkjLk8sFMjdsyM5hasGNd7ZgqdRLk/1/";

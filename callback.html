@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Btraderhub | Connecting...</title>
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0;}
+        body{font-family:system-ui,sans-serif;background:#0e1118;color:#e2e8f0;height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px;}
+        .logo{font-size:24px;font-weight:900;}
+        .logo span{color:#00d2c8;}
+        .spinner{width:44px;height:44px;border:3px solid #2d3748;border-top-color:#00d2c8;border-radius:50%;animation:spin .8s linear infinite;}
+        @keyframes spin{to{transform:rotate(360deg);}}
+        .msg{font-size:14px;color:#718096;}
+        .err{color:#ff444f;font-size:13px;text-align:center;max-width:320px;line-height:1.6;padding:0 16px;}
+        .btn{background:#00d2c8;color:#000;border:none;border-radius:8px;padding:10px 24px;font-weight:700;cursor:pointer;font-size:13px;display:none;margin-top:8px;}
+    </style>
+</head>
+<body>
+    <div class="logo">B<span>traderhub</span></div>
+    <div class="spinner" id="spinner"></div>
+    <div class="msg" id="msg">Completing authorization...</div>
+    <div class="err" id="err"></div>
+    <button class="btn" id="retry-btn" onclick="window.location.href='/'">Try Again</button>
+    <script>
+    async function handleCallback() {
+        const u       = new URL(window.location.href);
+        const code    = u.searchParams.get('code');
+        const state   = u.searchParams.get('state');
+        const error   = u.searchParams.get('error');
+        const errDesc = u.searchParams.get('error_description');
+        const spinner  = document.getElementById('spinner');
+        const msg      = document.getElementById('msg');
+        const errEl    = document.getElementById('err');
+        const retryBtn = document.getElementById('retry-btn');
+
+        function showError(text) {
+            spinner.style.display  = 'none';
+            errEl.textContent      = text;
+            retryBtn.style.display = 'block';
+            msg.style.display      = 'none';
+        }
+
+        if (error)        { showError('Authorization failed: ' + (errDesc || error)); return; }
+        if (!code||!state){ showError('Missing authorization code. Please try again.'); return; }
+
+        try {
+            msg.textContent = 'Exchanging authorization code...';
+            const r    = await fetch('/api/oauth-callback', {
+                method:  'POST',
+                headers: {'Content-Type':'application/json'},
+                body:    JSON.stringify({ code, state })
+            });
+            const data = await r.json();
+            if (!r.ok) { showError(data.error || 'Token exchange failed. Please try again.'); return; }
+
+            msg.textContent = 'Connected! Loading your account...';
+            sessionStorage.setItem('deriv_access_token', data.access_token);
+            if (data.expires_in) sessionStorage.setItem('deriv_token_expiry', Date.now() + (data.expires_in * 1000));
+            window.location.replace('/');
+        } catch(err) {
+            showError('Connection error. Please check your internet and try again.');
+            console.error(err);
+        }
+    }
+    handleCallback();
+    </script>
+</body>
+</html>
