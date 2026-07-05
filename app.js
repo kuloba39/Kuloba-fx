@@ -241,14 +241,34 @@ function switchPanel(name, el) {
 // AUTH — STEP 1: PKCE Login (Amy-verified — DO NOT CHANGE)
 // ================================================================
 async function loginWithDeriv() {
+    const loginBtn = document.getElementById('btn-login');
+    if (loginBtn) { loginBtn.textContent = 'Connecting...'; loginBtn.disabled = true; }
     showStatus("Starting secure login...", 'info');
+
     try {
-        // Step 1: Get PKCE from server — no browser storage needed (Amy's fix)
-        const resp = await fetch('/api/oauth-start', { method: 'POST' });
-        if (!resp.ok) { showStatus("Login server error. Please try again.", 'err'); return; }
+        // Call server to generate PKCE — no browser storage needed (Amy's fix)
+        const resp = await fetch('/api/oauth-start', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (!resp.ok) {
+            const err = await resp.text();
+            showStatus("Login server error. Please try again.", 'err');
+            console.error('oauth-start failed:', resp.status, err);
+            if (loginBtn) { loginBtn.textContent = 'Log in'; loginBtn.disabled = false; }
+            return;
+        }
+
         const cfg = await resp.json();
 
-        // Step 2: Build auth URL and redirect
+        if (!cfg.state || !cfg.code_challenge) {
+            showStatus("Invalid server response. Please try again.", 'err');
+            if (loginBtn) { loginBtn.textContent = 'Log in'; loginBtn.disabled = false; }
+            return;
+        }
+
+        // Build auth URL with server-generated values
         const params = new URLSearchParams({
             response_type:         'code',
             client_id:             cfg.client_id,
@@ -259,12 +279,16 @@ async function loginWithDeriv() {
             code_challenge_method: cfg.code_challenge_method
         });
 
-        // Always use replace() — avoids back-button issues on mobile
-        window.location.replace(`${cfg.authorization_endpoint}?${params.toString()}`);
+        const authUrl = `${cfg.authorization_endpoint}?${params.toString()}`;
+        console.log('Redirecting to:', authUrl.substring(0, 80) + '...');
+
+        // Redirect to Deriv login
+        window.location.replace(authUrl);
 
     } catch(err) {
-        showStatus("Connection error. Please try again.", 'err');
-        console.error(err);
+        showStatus("Network error. Please check your connection.", 'err');
+        console.error('loginWithDeriv error:', err);
+        if (loginBtn) { loginBtn.textContent = 'Log in'; loginBtn.disabled = false; }
     }
 }
 
