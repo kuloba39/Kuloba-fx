@@ -1513,31 +1513,57 @@ function getTopSignals(symbol, n = 5) {
         if (underPct > 52 && b > 0) signals.push({ direction:`Under ${b}`, confidence:Math.min(93,Math.round(underPct)), type:'over_under', botDirection:'under', color:'var(--purple)', pred:b, reason:`${underPct.toFixed(1)}% ticks below ${b}` });
     }
 
-    // ── RISE / FALL — from price momentum ──
-    if (mm && mm.prices.length >= 20) {
+    // ── RISE / FALL — always show based on recent momentum ──
+    if (mm && mm.prices.length >= 10) {
         const recent  = mm.prices.slice(-20);
         const rising  = recent.filter((p,i) => i>0 && p>recent[i-1]).length;
-        const risePct = (rising / 19) * 100;
+        const risePct = (rising / Math.max(recent.length-1,1)) * 100;
         const fallPct = 100 - risePct;
-        if (risePct > 55) signals.push({ direction:'Rise Only', confidence:Math.min(90,Math.round(risePct)), type:'rise_fall', botDirection:'rise', color:'var(--green)', pred:null, reason:`Price rising ${risePct.toFixed(0)}% of last 20 ticks` });
-        if (fallPct > 55) signals.push({ direction:'Fall Only', confidence:Math.min(90,Math.round(fallPct)), type:'rise_fall', botDirection:'fall', color:'var(--red)',   pred:null, reason:`Price falling ${fallPct.toFixed(0)}% of last 20 ticks` });
+        // Always add Rise/Fall — pick the better direction
+        const riseConf = Math.min(88, Math.round(50 + Math.abs(risePct - 50)));
+        const riseDir  = risePct >= fallPct ? 'rise' : 'fall';
+        const riseCol  = riseDir === 'rise' ? 'var(--green)' : 'var(--red)';
+        signals.push({
+            direction: riseDir === 'rise' ? 'Rise Only' : 'Fall Only',
+            confidence: riseConf,
+            type: 'rise_fall',
+            botDirection: riseDir,
+            color: riseCol,
+            pred: null,
+            reason: `${riseDir==='rise'?'Bullish':'Bearish'} momentum — ${(riseDir==='rise'?risePct:fallPct).toFixed(0)}% of last ${recent.length} ticks`
+        });
     }
 
-    // ── ONLY UPS / ONLY DOWNS — stronger momentum ──
-    if (mm && mm.prices.length >= 20) {
+    // ── ONLY UPS / ONLY DOWNS ──
+    if (mm && mm.prices.length >= 10) {
         const recent  = mm.prices.slice(-20);
         const rising  = recent.filter((p,i) => i>0 && p>recent[i-1]).length;
-        const risePct = (rising / 19) * 100;
-        if (risePct > 65) signals.push({ direction:'Only Ups',   confidence:Math.min(88,Math.round(risePct - 10)), type:'only_ups_downs', botDirection:'ups',   color:'var(--green)', pred:null, reason:`Strong upward momentum ${risePct.toFixed(0)}%` });
-        if (risePct < 35) signals.push({ direction:'Only Downs', confidence:Math.min(88,Math.round(100-risePct-10)), type:'only_ups_downs', botDirection:'downs', color:'var(--red)',   pred:null, reason:`Strong downward momentum ${(100-risePct).toFixed(0)}%` });
+        const risePct = (rising / Math.max(recent.length-1,1)) * 100;
+        const upsDir  = risePct >= 50 ? 'ups' : 'downs';
+        const upsConf = Math.min(85, Math.round(48 + Math.abs(risePct - 50)));
+        signals.push({
+            direction: upsDir === 'ups' ? 'Only Ups' : 'Only Downs',
+            confidence: upsConf,
+            type: 'only_ups_downs',
+            botDirection: upsDir,
+            color: upsDir === 'ups' ? 'var(--teal)' : 'var(--amber)',
+            pred: null,
+            reason: `${upsDir==='ups'?'Upward':'Downward'} trend — ${(upsDir==='ups'?risePct:100-risePct).toFixed(0)}% momentum`
+        });
     }
 
     // ── HOT DIGIT MATCHES ──
     const ranked = counts.map((c,d)=>({d,c})).sort((a,b)=>b.c-a.c);
     ranked.slice(0,2).forEach(({d,c}) => {
         const pct = (c/total)*100;
-        if (pct > 14) {
-            signals.push({ direction:`Matches ${d}`, confidence:Math.min(85,Math.round(pct*5)), type:'over_under', botDirection:'over', color:'var(--amber)', pred:d, reason:`Digit ${d} appeared ${pct.toFixed(1)}% (expected 10%)` });
+        if (pct > 13) {
+            signals.push({
+                direction:`Matches ${d}`,
+                confidence: Math.min(85,Math.round(pct*5)),
+                type:'over_under', botDirection:'over',
+                color:'var(--amber)', pred:d,
+                reason:`Digit ${d} appeared ${pct.toFixed(1)}% (expected 10%)`
+            });
         }
     });
 
