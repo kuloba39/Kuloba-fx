@@ -179,9 +179,42 @@ body{padding-bottom:60px;}
 /* ── Iframe container ── */
 .iframe-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0;}
 
-@media(max-width:768px){.sidebar,.sidebar-right{display:none;}.sidebar-right{display:none;}}
+@media(max-width:768px){
+    /* Hide sidebars by default on mobile */
+    .sidebar,.sidebar-right{ display:none; }
 
-<link rel="icon" type="image/png" href="logo.png">
+    /* DBot mobile layout — show settings as bottom sheet */
+    #bot-pane.active { flex-direction: column !important; }
+    #bot-pane .sidebar {
+        display: flex !important;
+        width: 100% !important;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+        border-right: none !important;
+        border-top: 1px solid var(--border);
+        order: 2;
+    }
+    #bot-pane .sidebar.mobile-open {
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+    #bot-pane > div:not(.sidebar):not(.sidebar-right) {
+        order: 1;
+        min-height: 0;
+        flex: 1;
+    }
+    /* Hide right AI panel on mobile */
+    #bot-pane .sidebar-right { display: none !important; }
+
+    /* Mobile bot toggle button */
+    #mobile-bot-settings-btn {
+        display: flex !important;
+    }
+}
+@media(min-width:769px){
+    #mobile-bot-settings-btn { display: none !important; }
+}
     </style>
 </head>
 <body>
@@ -192,10 +225,7 @@ body{padding-bottom:60px;}
 <!-- ═══ HEADER ═══ -->
 <header>
     <div style="display:flex;align-items:center;gap:12px;">
-        <div style="display:flex;align-items:center;gap:10px;">
-    <img src="logo.png" alt="Btraderhub" style="width:38px;height:38px;border-radius:6px;object-fit:contain;">
-    <div class="logo">B<span>traderhub</span></div>
-</div>
+        <div class="logo">B<span>traderhub</span></div>
         <div style="display:flex;align-items:center;gap:5px;">
             <span class="status-dot" id="status-dot"></span>
             <span id="status-text" style="font-size:11px;font-weight:700;color:var(--muted);">OFFLINE</span>
@@ -381,7 +411,13 @@ body{padding-bottom:60px;}
             <div style="font-size:11px;color:var(--muted);">Type: <b id="info-type" style="color:var(--text);">—</b></div>
             <div style="font-size:11px;color:var(--muted);">Direction: <b id="info-dir" style="color:var(--teal);">—</b></div>
             <div style="font-size:11px;color:var(--muted);">Stake: <b id="info-stake" style="color:var(--text);">$1.00</b></div>
-            <div id="ai-status-badge" style="margin-left:auto;" class="badge badge-teal">🧠 AI Active</div>
+            <div id="ai-status-badge" class="badge badge-teal">🧠 AI Active</div>
+            <!-- Mobile only: settings toggle button -->
+            <button id="mobile-bot-settings-btn" onclick="toggleMobileBotSettings()"
+                class="btn btn-teal"
+                style="display:none;font-size:11px;padding:5px 12px;margin-left:auto;">
+                ⚙️ Bot Settings
+            </button>
         </div>
 
         <!-- Panel tabs (Summary / Transactions / Journal) — like screenshot -->

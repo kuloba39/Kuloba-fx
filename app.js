@@ -192,6 +192,31 @@ window.addEventListener('load', async () => {
 // ================================================================
 // TAB & PANEL NAVIGATION
 // ================================================================
+// Mobile bot settings panel toggle
+function toggleMobileBotSettings() {
+    const sidebar = document.querySelector('#bot-pane .sidebar');
+    const btn     = document.getElementById('mobile-bot-settings-btn');
+    if (!sidebar) return;
+    const isOpen = sidebar.classList.contains('mobile-open');
+    if (isOpen) {
+        sidebar.classList.remove('mobile-open');
+        if (btn) btn.textContent = '⚙️ Bot Settings';
+    } else {
+        sidebar.classList.add('mobile-open');
+        if (btn) btn.textContent = '✕ Close Settings';
+        // Scroll to top of settings
+        sidebar.scrollTop = 0;
+    }
+}
+
+// Auto-close settings panel when bot starts running on mobile
+function closeMobileBotSettings() {
+    const sidebar = document.querySelector('#bot-pane .sidebar');
+    const btn     = document.getElementById('mobile-bot-settings-btn');
+    if (sidebar) sidebar.classList.remove('mobile-open');
+    if (btn) btn.textContent = '⚙️ Bot Settings';
+}
+
 function switchTab(id) {
     document.querySelectorAll('.tab-pane').forEach(p => {
         p.style.display = 'none';
@@ -850,6 +875,7 @@ function toggleBot() {
 
         updateActiveBotName();
         updateInfoBar();
+        closeMobileBotSettings(); // close settings panel on mobile when bot starts
         log(`🟢 Bot started | ${MKT[mkt]||mkt} | ${document.getElementById('bot-type')?.value} | ${botDirection.toUpperCase()}`, 'i');
         log(`   Stake: $${currentStake.toFixed(2)} | TP: $${document.getElementById('bot-tp')?.value} | SL: $${document.getElementById('bot-sl')?.value}`, 'i');
 
@@ -1778,6 +1804,16 @@ function applySignalToBot(sig) {
     notify("AI Signal Applied ✅", `${sig.direction}
 Confidence: ${sig.confidence}%${sig.pred!==null&&sig.pred!==undefined?' | Barrier: '+sig.pred:''}`, 'ok');
     switchTab('bot');
+    // On mobile, open settings panel so user can review and adjust
+    setTimeout(() => {
+        const sidebar = document.querySelector('#bot-pane .sidebar');
+        if (sidebar && window.innerWidth <= 768) {
+            sidebar.classList.add('mobile-open');
+            const btn = document.getElementById('mobile-bot-settings-btn');
+            if (btn) btn.textContent = '✕ Close Settings';
+            sidebar.scrollTop = 0;
+        }
+    }, 300);
 }
 
 function updateScannerResults() {
