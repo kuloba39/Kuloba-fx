@@ -1070,7 +1070,7 @@ function handleBuyResponse(r) {
         totalRuns++;
         log(`✅ Contract #${lastContractId} confirmed | Buy price: $${r.buy.buy_price}`, 'w');
         updateAllStats();
-        // Subscribe to this contract for result
+        // Subscribe to contract updates — this gives us entry/exit spots
         derivWS.send(JSON.stringify({
             proposal_open_contract: 1,
             contract_id: lastContractId,
@@ -1091,8 +1091,9 @@ function handleContractResult(c) {
     const profit     = parseFloat(c.profit);
     const buyPrice   = parseFloat(c.buy_price || currentStake);
     const payout     = buyPrice + profit;
-    const exitSpot   = c.exit_tick_display_value || c.entry_tick_display_value;
-    const entrySpot2 = c.entry_tick_display_value || lastEntrySpot;
+    // Extract proper entry and exit spots like Deriv shows
+    const entrySpot2 = c.entry_tick_display_value || c.entry_spot_display_value || lastEntrySpot || '—';
+    const exitSpot   = c.exit_tick_display_value  || c.exit_spot_display_value  || c.entry_tick_display_value || '—';
 
     totalStake  += buyPrice;
     totalPayout += Math.max(0, payout);
@@ -1170,33 +1171,43 @@ function addTxRow(contractType, entrySpot, exitSpot, stake, profit, isWin) {
     const empty = container.querySelector('div[style*="text-align:center"]');
     if (empty) empty.remove();
 
+    // Icons matching Deriv's style
     const icons = {
         DIGITOVER:'↑', DIGITUNDER:'↓', DIGITEVEN:'2x', DIGITODD:'!!',
-        CALL:'📈', PUT:'📉', RUNHIGH:'↑↑', RUNLOW:'↓↓'
+        DIGITMATCH:'=', DIGITDIFF:'≠',
+        CALL:'↑', PUT:'↓', RUNHIGH:'↑↑', RUNLOW:'↓↓'
     };
-    const icon    = icons[contractType] || '?';
-    const payout  = stake + profit;
+    const icon       = icons[contractType] || '?';
+    const iconBg     = isWin ? '#00d79e18' : '#ff444f18';
+    const iconColor  = isWin ? 'var(--green)' : 'var(--red)';
     const profitColor = isWin ? 'var(--green)' : 'var(--red)';
+
+    // Format spots exactly like Deriv — show full price
+    const fmtSpot = (s) => {
+        if (!s || s === '—') return '—';
+        // Return as-is — Deriv already formats it correctly
+        return String(s);
+    };
 
     const row = document.createElement('div');
     row.className = 'tx-row';
     row.innerHTML = `
-        <div class="tx-type-icon" style="background:${isWin?'#00d79e18':'#ff444f18'};color:${isWin?'var(--green)':'var(--red)'};font-weight:900;font-size:14px;">
+        <div class="tx-type-icon" style="background:${iconBg};color:${iconColor};font-weight:900;font-size:14px;border-radius:8px;">
             ${icon}
         </div>
         <div class="tx-spots">
             <div class="tx-entry">
                 <span class="spot-dot entry"></span>
-                <span class="tx-price">${entrySpot || '—'}</span>
+                <span class="tx-price" style="font-family:monospace;">${fmtSpot(entrySpot)}</span>
             </div>
             <div class="tx-exit">
                 <span class="spot-dot exit"></span>
-                <span class="tx-price" style="color:var(--muted);">${exitSpot || '—'}</span>
+                <span class="tx-price" style="color:var(--muted);font-family:monospace;">${fmtSpot(exitSpot)}</span>
             </div>
         </div>
         <div class="tx-pnl">
-            <div class="tx-stake">$${stake.toFixed(2)} USD</div>
-            <div class="tx-profit ${isWin?'':'loss'}">${isWin?'+':''}$${profit.toFixed(2)} USD</div>
+            <div class="tx-stake" style="color:var(--muted);font-size:11px;">$${stake.toFixed(2)} USD</div>
+            <div class="tx-profit ${isWin?'':'loss'}" style="font-family:monospace;">${isWin?'+':''}$${profit.toFixed(2)} USD</div>
         </div>`;
 
     container.insertBefore(row, container.firstChild);
