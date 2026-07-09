@@ -594,9 +594,32 @@ function routeMsg(r) {
     // STEP 3: Buy response
     if (r.msg_type === 'buy') handleBuyResponse(r);
 
-    // Contract settled
+    // Contract update/settlement
     if (r.msg_type === 'proposal_open_contract' && r.proposal_open_contract) {
-        handleContractResult(r.proposal_open_contract);
+        const c = r.proposal_open_contract;
+        // Full debug log on settlement — logs ALL fields so we can see what Deriv sends
+        if (c.is_sold || c.is_expired) {
+            const debugFields = {
+                entry_tick:          c.entry_tick,
+                entry_tick_display:  c.entry_tick_display_value,
+                entry_spot:          c.entry_spot,
+                entry_spot_display:  c.entry_spot_display_value,
+                exit_tick:           c.exit_tick,
+                exit_tick_display:   c.exit_tick_display_value,
+                exit_spot:           c.exit_spot,
+                exit_spot_display:   c.exit_spot_display_value,
+                sell_spot:           c.sell_spot,
+                sell_spot_display:   c.sell_spot_display_value,
+                sell_price:          c.sell_price,
+            };
+            // Log only fields that have values
+            const found = Object.entries(debugFields)
+                .filter(([k,v]) => v !== undefined && v !== null && v !== '')
+                .map(([k,v]) => `${k}=${v}`)
+                .join(' | ');
+            log(`📋 Spots: ${found || 'NO SPOT FIELDS FOUND'}`, 'd');
+        }
+        handleContractResult(c);
     }
 }
 
@@ -1081,7 +1104,13 @@ function handleBuyResponse(r) {
 
 function handleContractResult(c) {
     if (!c) return;
-    // Only process when contract is fully settled
+
+    // Update exit spot on open contracts even before settlement
+    if (c.contract_id && c.exit_tick_display_value) {
+        updateTxRowExitSpot(c.contract_id, c.exit_tick_display_value);
+    }
+
+    // Only process final result when fully settled
     if (!c.is_sold && !c.is_expired) return;
     if (c.contract_id !== lastContractId) return;
 
@@ -1091,9 +1120,18 @@ function handleContractResult(c) {
     const profit     = parseFloat(c.profit);
     const buyPrice   = parseFloat(c.buy_price || currentStake);
     const payout     = buyPrice + profit;
-    // Extract proper entry and exit spots like Deriv shows
-    const entrySpot2 = c.entry_tick_display_value || c.entry_spot_display_value || lastEntrySpot || '—';
-    const exitSpot   = c.exit_tick_display_value  || c.exit_spot_display_value  || c.entry_tick_display_value || '—';
+
+    // Extract entry and exit spots — check all possible fields Deriv sends
+    const entrySpot2 = c.entry_tick_display_value
+                    || c.entry_spot_display_value
+                    || c.entry_tick
+                    || lastEntrySpot
+                    || '—';
+    const exitSpot   = c.exit_tick_display_value
+                    || c.exit_spot_display_value
+                    || c.exit_tick
+                    || c.sell_spot_display_value
+                    || '—';
 
     totalStake  += buyPrice;
     totalPayout += Math.max(0, payout);
@@ -1163,6 +1201,15 @@ function handleContractResult(c) {
 // ================================================================
 // TRANSACTION ROW — exactly like screenshot
 // ================================================================
+// Update exit spot on an existing transaction row
+function updateTxRowExitSpot(contractId, exitSpot) {
+    const rows = document.querySelectorAll('.tx-row[data-contract-id="' + contractId + '"]');
+    rows.forEach(row => {
+        const exitEl = row.querySelector('.tx-exit-spot');
+        if (exitEl && exitSpot) exitEl.textContent = exitSpot;
+    });
+}
+
 function addTxRow(contractType, entrySpot, exitSpot, stake, profit, isWin) {
     const container = document.getElementById('tx-list');
     if (!container) return;
@@ -1191,6 +1238,7 @@ function addTxRow(contractType, entrySpot, exitSpot, stake, profit, isWin) {
 
     const row = document.createElement('div');
     row.className = 'tx-row';
+    if (lastContractId) row.dataset.contractId = lastContractId;
     row.innerHTML = `
         <div class="tx-type-icon" style="background:${iconBg};color:${iconColor};font-weight:900;font-size:14px;border-radius:8px;">
             ${icon}
@@ -1202,7 +1250,7 @@ function addTxRow(contractType, entrySpot, exitSpot, stake, profit, isWin) {
             </div>
             <div class="tx-exit">
                 <span class="spot-dot exit"></span>
-                <span class="tx-price" style="color:var(--muted);font-family:monospace;">${fmtSpot(exitSpot)}</span>
+                <span class="tx-price tx-exit-spot" style="color:var(--muted);font-family:monospace;">${fmtSpot(exitSpot)}</span>
             </div>
         </div>
         <div class="tx-pnl">
