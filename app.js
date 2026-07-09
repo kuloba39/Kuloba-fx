@@ -1330,15 +1330,140 @@ function updateAllStats() {
 function checkThresholds() {
     const tp = parseFloat(document.getElementById('bot-tp')?.value || 0);
     const sl = parseFloat(document.getElementById('bot-sl')?.value || 0);
+
     if (tp > 0 && totalPL >= tp) {
-        log(`🏆 Take Profit $${tp} hit! Stopping bot.`, 'w');
-        notify("Take Profit Hit! 🏆", `Profit of $${tp} reached. Bot stopped.`, 'ok');
-        toggleBot();
+        log(`🏆 TAKE PROFIT $${tp} HIT! Stopping bot.`, 'w');
+        // Stop the bot
+        isBotRunning   = false;
+        pendingContract = false;
+        lastContractId  = null;
+        const btn = document.getElementById('run-btn');
+        if (btn) { btn.textContent = '▶ Run'; btn.classList.remove('btn-stop'); btn.classList.add('btn-run'); }
+        updateBotBar();
+        // Show big target hit modal
+        showTargetModal('tp', tp);
+
     } else if (sl > 0 && totalPL <= -sl) {
-        log(`⚠️ Stop Loss $${sl} hit! Stopping bot.`, 'x');
-        notify("Stop Loss Hit ⚠️", `Loss of $${sl} reached. Bot stopped.`, 'err');
-        toggleBot();
+        log(`⛔ STOP LOSS $${sl} HIT! Stopping bot.`, 'x');
+        isBotRunning   = false;
+        pendingContract = false;
+        lastContractId  = null;
+        const btn = document.getElementById('run-btn');
+        if (btn) { btn.textContent = '▶ Run'; btn.classList.remove('btn-stop'); btn.classList.add('btn-run'); }
+        updateBotBar();
+        // Show big stop loss modal
+        showTargetModal('sl', sl);
     }
+}
+
+function showTargetModal(type, amount) {
+    // Remove existing modal if any
+    const existing = document.getElementById('target-modal');
+    if (existing) existing.remove();
+
+    const isTP   = type === 'tp';
+    const color  = isTP ? '#00d2c8' : '#ff444f';
+    const emoji  = isTP ? '🏆' : '⛔';
+    const title  = isTP ? 'TAKE PROFIT HIT!' : 'STOP LOSS HIT!';
+    const msg    = isTP
+        ? `Congratulations! You reached your profit target of $${amount.toFixed(2)}.`
+        : `Your stop loss of $${amount.toFixed(2)} has been reached.`;
+    const sub    = isTP
+        ? 'Would you like to reset and continue trading or stop here?'
+        : 'Would you like to reset and try again or stop trading?';
+
+    const modal = document.createElement('div');
+    modal.id    = 'target-modal';
+    modal.style.cssText = `
+        position:fixed;inset:0;z-index:999999;
+        background:#000000cc;
+        display:flex;align-items:center;justify-content:center;
+        padding:16px;animation:fadeInModal .3s ease;
+    `;
+    modal.innerHTML = `
+        <style>
+            @keyframes fadeInModal{from{opacity:0;transform:scale(.9);}to{opacity:1;transform:scale(1);}}
+            @keyframes pulse-ring{0%{box-shadow:0 0 0 0 ${color}66;}70%{box-shadow:0 0 0 20px transparent;}100%{box-shadow:0 0 0 0 transparent;}}
+        </style>
+        <div style="background:#161b27;border:2px solid ${color};border-radius:16px;padding:30px 24px;
+                    max-width:400px;width:100%;text-align:center;
+                    box-shadow:0 0 40px ${color}44;animation:pulse-ring 1.5s infinite;">
+            <div style="font-size:56px;margin-bottom:12px;">${emoji}</div>
+            <div style="font-size:22px;font-weight:900;color:${color};margin-bottom:8px;">${title}</div>
+            <div style="font-size:14px;color:#e2e8f0;margin-bottom:6px;">${msg}</div>
+            <div style="font-size:12px;color:#718096;margin-bottom:8px;">${sub}</div>
+
+            <!-- Current session stats -->
+            <div style="background:#0e1118;border:1px solid #2d3748;border-radius:10px;padding:14px;margin:16px 0;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+                <div>
+                    <div style="font-size:9px;color:#718096;text-transform:uppercase;margin-bottom:4px;">Runs</div>
+                    <div style="font-size:18px;font-weight:900;color:#e2e8f0;">${totalRuns}</div>
+                </div>
+                <div>
+                    <div style="font-size:9px;color:#718096;text-transform:uppercase;margin-bottom:4px;">Win Rate</div>
+                    <div style="font-size:18px;font-weight:900;color:${color};">${totalRuns>0?((totalWins/totalRuns)*100).toFixed(1):0}%</div>
+                </div>
+                <div>
+                    <div style="font-size:9px;color:#718096;text-transform:uppercase;margin-bottom:4px;">P/L</div>
+                    <div style="font-size:18px;font-weight:900;color:${color};">$${totalPL.toFixed(2)}</div>
+                </div>
+            </div>
+
+            <div style="display:flex;gap:10px;flex-direction:column;">
+                <button onclick="resetAndContinue()" style="
+                    background:${color};color:${isTP?'#000':'#fff'};border:none;
+                    border-radius:10px;padding:14px;font-size:14px;font-weight:900;
+                    cursor:pointer;width:100%;letter-spacing:.03em;">
+                    🔄 Reset & Continue Trading
+                </button>
+                <button onclick="stopAndClose()" style="
+                    background:transparent;color:#718096;border:1px solid #2d3748;
+                    border-radius:10px;padding:12px;font-size:13px;font-weight:700;
+                    cursor:pointer;width:100%;">
+                    ✋ Stop Trading
+                </button>
+            </div>
+        </div>`;
+
+    document.body.appendChild(modal);
+
+    // Play sound
+    if (isTP) { try { winAudio.currentTime=0; winAudio.play(); } catch(e){} }
+    else       { try { lossAudio.currentTime=0; lossAudio.play(); } catch(e){} }
+}
+
+function resetAndContinue() {
+    // Remove modal
+    document.getElementById('target-modal')?.remove();
+
+    // Reset ALL trading stats but keep bot settings
+    totalPL       = 0;
+    totalRuns     = 0;
+    totalWins     = 0;
+    totalLosses   = 0;
+    totalStake    = 0;
+    totalPayout   = 0;
+    currentStreak = 0;
+    currentStake  = parseFloat(document.getElementById('bot-stake')?.value || 1);
+    baseStake     = currentStake;
+    lastContractId = null;
+    pendingContract = false;
+
+    // Clear transactions list
+    const txList = document.getElementById('tx-list');
+    if (txList) txList.innerHTML = '<div style="font-size:11px;color:var(--dim);text-align:center;padding:30px;">No transactions yet.</div>';
+
+    // Reset summary stats display
+    updateAllStats();
+    log('🔄 Stats reset — continuing trading session', 'i');
+
+    // Auto-start bot again
+    toggleBot();
+}
+
+function stopAndClose() {
+    document.getElementById('target-modal')?.remove();
+    log('✋ Trading stopped by user after target.', 'i');
 }
 
 function updateBotBar() {
