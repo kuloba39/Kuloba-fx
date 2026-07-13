@@ -4,6 +4,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Btraderhub | Smart Trading Platform</title>
+
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Btraderhub — AI-powered automated trading platform built on Deriv. Real-time digit stats, AI scanner, automated bots, 68% avg win rate. Connect your Deriv account and start trading smarter.">
+    <meta name="keywords" content="Deriv trading bot, automated trading, AI trading, digit stats, Deriv third party, trading platform, volatility indices bot">
+    <meta name="author" content="Btraderhub">
+    <meta name="robots" content="index, follow">
+
+    <!-- Favicon — shows logo in browser tab and Google results -->
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="apple-touch-icon" href="logo.png">
+    <link rel="shortcut icon" href="logo.png">
+
+    <!-- Open Graph — for WhatsApp, Facebook, Twitter previews -->
+    <meta property="og:title" content="Btraderhub | Smart AI Trading Platform">
+    <meta property="og:description" content="AI-powered automated trading on Deriv. Real-time signals, digit stats, automated bots. Start trading smarter today.">
+    <meta property="og:image" content="https://btraderhub.com/logo.png">
+    <meta property="og:url" content="https://btraderhub.com">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Btraderhub">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Btraderhub | Smart AI Trading Platform">
+    <meta name="twitter:description" content="AI-powered automated trading on Deriv. Real-time signals, digit stats, automated bots.">
+    <meta name="twitter:image" content="https://btraderhub.com/logo.png">
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://btraderhub.com">
+
     <style>
 /* ============================================================
    BTRADERHUB — Clean Dark Theme (Deriv-inspired)
@@ -248,6 +277,7 @@ body{padding-bottom:60px;}
     <button id="tab-btn-chart"     onclick="switchTab('chart')"     class="tab-btn">📈 Chart</button>
     <button id="tab-btn-digits"    onclick="switchTab('digits')"    class="tab-btn">0️⃣ D-Stats</button>
     <button id="tab-btn-scanner"   onclick="switchTab('scanner')"   class="tab-btn">🧠 AI Scanner</button>
+    <button id="tab-btn-mt5"       onclick="switchTab('mt5')"       class="tab-btn">📊 MT5 Signals</button>
 </nav>
 
 <!-- ═══ MAIN ═══ -->
@@ -764,6 +794,49 @@ body{padding-bottom:60px;}
 
         <!-- All market results -->
         <div id="scan-results" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;"></div>
+    </div>
+</div>
+
+<!-- ── MT5 SIGNALS ── -->
+<div id="mt5-pane" class="tab-pane scroll" style="padding:16px;">
+    <div style="max-width:860px;margin:0 auto;">
+
+        <!-- Header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+            <div>
+                <h2 style="font-size:18px;font-weight:900;">📊 MT5 CFD Signals</h2>
+                <p style="font-size:11px;color:var(--muted);margin-top:3px;">AI-powered signals for Deriv MT5. Click any signal to open MT5 and trade instantly.</p>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <button onclick="refreshMT5Signals()" class="btn btn-teal" style="font-size:11px;padding:7px 16px;">🔄 Refresh Signals</button>
+                <a href="https://app.deriv.com/mt5" target="_blank" class="btn btn-ghost" style="font-size:11px;padding:7px 16px;text-decoration:none;">Open MT5 →</a>
+            </div>
+        </div>
+
+        <!-- How it works banner -->
+        <div style="background:#00d2c818;border:1px solid #00d2c844;border-radius:10px;padding:14px;margin-bottom:16px;display:flex;align-items:center;gap:12px;">
+            <div style="font-size:24px;">💡</div>
+            <div>
+                <div style="font-size:12px;font-weight:700;color:var(--teal);margin-bottom:3px;">How to use MT5 Signals</div>
+                <div style="font-size:11px;color:var(--muted);">1. Our AI scans CFD markets in real time &nbsp;→&nbsp; 2. Click <b style="color:var(--teal);">Trade on MT5</b> on any signal &nbsp;→&nbsp; 3. MT5 opens with the instrument ready &nbsp;→&nbsp; 4. Confirm your trade</div>
+            </div>
+        </div>
+
+        <!-- Market selector -->
+        <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+            <button onclick="filterMT5('all',this)"        class="btn btn-teal"  style="font-size:11px;padding:5px 14px;">All</button>
+            <button onclick="filterMT5('boom_crash',this)" class="btn btn-ghost" style="font-size:11px;padding:5px 14px;">🚀💥 Boom &amp; Crash</button>
+            <button onclick="filterMT5('step',this)"       class="btn btn-ghost" style="font-size:11px;padding:5px 14px;">👣 Step Index</button>
+            <button onclick="filterMT5('volatility',this)" class="btn btn-ghost" style="font-size:11px;padding:5px 14px;">📊 Volatility</button>
+        </div>
+
+        <!-- Signals grid -->
+        <div id="mt5-signals-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;"></div>
+
+        <!-- Disclaimer -->
+        <div style="margin-top:20px;padding:12px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;">
+            <p style="font-size:10px;color:var(--muted);line-height:1.6;">⚠️ <b>Risk Warning:</b> CFD trading involves significant risk of loss. These signals are generated by AI analysis and are for informational purposes only. They do not constitute financial advice. Always use stop loss and only trade with money you can afford to lose. Past performance does not guarantee future results.</p>
+        </div>
     </div>
 </div>
 
