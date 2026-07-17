@@ -1,7 +1,7 @@
 // /api/oauth-start — PKCE encoded in state (no shared storage needed)
 import { createCipheriv, randomBytes } from 'crypto';
 
-const SECRET = process.env.PKCE_SECRET || "btraderhub-pkce-secret-key-32chr!";
+const SECRET = process.env.PKCE_SECRET || "DolarHunter-pkce-secret-key-32chr!";
 const KEY    = Buffer.from(SECRET.padEnd(32).slice(0,32));
 
 export default async function handler(req, res) {

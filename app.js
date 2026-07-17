@@ -1,5 +1,5 @@
 // ================================================================
-// BTRADERHUB app.js — Clean Focused Build
+// DolarHunter app.js — Clean Focused Build
 // Auth: Amy-verified PKCE (DO NOT CHANGE)
 // ================================================================
 
@@ -1380,7 +1380,7 @@ function downloadTransactions() {
     });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([csv], { type:'text/csv' }));
-    a.download = `btraderhub_transactions_${new Date().toISOString().slice(0,10)}.csv`;
+    a.download = `DolarHunter_transactions_${new Date().toISOString().slice(0,10)}.csv`;
     a.click();
 }
 
@@ -2686,16 +2686,16 @@ const LEGAL_CONTENT = {
 <p style="margin-bottom:10px;"><b style="color:#e2e8f0;">Effective Date:</b> 1 January 2026</p>
 
 <h4 style="color:#00d2c8;margin:14px 0 6px;">1. Acceptance of Terms</h4>
-<p>By accessing or using Btraderhub ("the Platform"), you agree to be bound by these Terms of Service. If you do not agree, do not use the Platform.</p>
+<p>By accessing or using DolarHunter ("the Platform"), you agree to be bound by these Terms of Service. If you do not agree, do not use the Platform.</p>
 
 <h4 style="color:#00d2c8;margin:14px 0 6px;">2. Description of Service</h4>
-<p>Btraderhub is a third-party trading interface that connects to the Deriv API. We provide automated trading tools, market analysis, and AI-powered signals. We are not affiliated with, endorsed by, or part of Deriv Ltd.</p>
+<p>DolarHunter is a third-party trading interface that connects to the Deriv API. We provide automated trading tools, market analysis, and AI-powered signals. We are not affiliated with, endorsed by, or part of Deriv Ltd.</p>
 
 <h4 style="color:#00d2c8;margin:14px 0 6px;">3. Eligibility</h4>
 <p>You must be at least 18 years old and legally permitted to trade financial instruments in your jurisdiction to use this Platform. It is your responsibility to verify local laws before trading.</p>
 
 <h4 style="color:#00d2c8;margin:14px 0 6px;">4. No Financial Advice</h4>
-<p>Nothing on Btraderhub constitutes financial, investment, or trading advice. All AI signals, market analysis, and bot strategies are for informational purposes only. You trade at your own risk.</p>
+<p>Nothing on DolarHunter constitutes financial, investment, or trading advice. All AI signals, market analysis, and bot strategies are for informational purposes only. You trade at your own risk.</p>
 
 <h4 style="color:#00d2c8;margin:14px 0 6px;">5. User Responsibilities</h4>
 <p>You are solely responsible for:</p>
@@ -2707,7 +2707,7 @@ const LEGAL_CONTENT = {
 </ul>
 
 <h4 style="color:#00d2c8;margin:14px 0 6px;">6. Limitation of Liability</h4>
-<p>Btraderhub, its owners, developers, and affiliates shall not be liable for any trading losses, lost profits, or damages arising from the use of this Platform, including but not limited to losses caused by bot malfunction, API errors, connectivity issues, or market conditions.</p>
+<p>DolarHunter, its owners, developers, and affiliates shall not be liable for any trading losses, lost profits, or damages arising from the use of this Platform, including but not limited to losses caused by bot malfunction, API errors, connectivity issues, or market conditions.</p>
 
 <h4 style="color:#00d2c8;margin:14px 0 6px;">7. Modifications</h4>
 <p>We reserve the right to modify these Terms at any time. Continued use of the Platform constitutes acceptance of updated Terms.</p>
@@ -2728,7 +2728,7 @@ const LEGAL_CONTENT = {
 <p style="margin-bottom:10px;"><b style="color:#e2e8f0;">Effective Date:</b> 1 January 2026</p>
 
 <h4 style="color:#00d2c8;margin:14px 0 6px;">1. Information We Collect</h4>
-<p>Btraderhub does <b style="color:#e2e8f0;">not</b> collect, store, or process your personal data on our servers. All authentication is handled directly between your browser and Deriv's servers via OAuth 2.0 PKCE.</p>
+<p>DolarHunter does <b style="color:#e2e8f0;">not</b> collect, store, or process your personal data on our servers. All authentication is handled directly between your browser and Deriv's servers via OAuth 2.0 PKCE.</p>
 <p style="margin-top:8px;">We do not store:</p>
 <ul style="margin:6px 0 6px 20px;">
     <li>Your Deriv account credentials</li>
@@ -2749,7 +2749,7 @@ const LEGAL_CONTENT = {
 <p>Your trading data is processed directly by Deriv Ltd. through their API. Please review <a href="https://deriv.com/privacy/" target="_blank" style="color:var(--teal);">Deriv's Privacy Policy</a> for information on how they handle your data.</p>
 
 <h4 style="color:#00d2c8;margin:14px 0 6px;">4. Cookies</h4>
-<p>Btraderhub does not use cookies or tracking technologies.</p>
+<p>DolarHunter does not use cookies or tracking technologies.</p>
 
 <h4 style="color:#00d2c8;margin:14px 0 6px;">5. Third-Party Services</h4>
 <p>We use the following third-party services:</p>
@@ -2760,7 +2760,7 @@ const LEGAL_CONTENT = {
 </ul>
 
 <h4 style="color:#00d2c8;margin:14px 0 6px;">6. Affiliate Disclosure</h4>
-<p>Btraderhub participates in the Deriv affiliate program. When you create a new Deriv account through our platform, we may receive a commission. This does not affect your trading costs or experience.</p>
+<p>DolarHunter participates in the Deriv affiliate program. When you create a new Deriv account through our platform, we may receive a commission. This does not affect your trading costs or experience.</p>
 
 <h4 style="color:#00d2c8;margin:14px 0 6px;">7. Contact</h4>
 <p>For privacy concerns: <a href="mailto:support@dolarhunter.com" style="color:var(--teal);">support@dolarhunter.com</a></p>`
@@ -2778,7 +2778,7 @@ const LEGAL_CONTENT = {
 <p>Binary options and CFDs are complex instruments. The majority of retail traders lose money when trading these products. You should consider whether you understand how these instruments work and whether you can afford to take the high risk of losing your money.</p>
 
 <h4 style="color:#00d2c8;margin:14px 0 6px;">2. Automated Trading Risk</h4>
-<p>Automated trading bots, including those provided or configured on Btraderhub, carry additional risks:</p>
+<p>Automated trading bots, including those provided or configured on DolarHunter, carry additional risks:</p>
 <ul style="margin:6px 0 6px 20px;">
     <li>Past performance of a bot does NOT guarantee future results</li>
     <li>Bots can malfunction due to connectivity issues, API changes, or software bugs</li>
@@ -2800,13 +2800,13 @@ const LEGAL_CONTENT = {
 </ul>
 
 <h4 style="color:#00d2c8;margin:14px 0 6px;">5. Regulatory Notice</h4>
-<p>Btraderhub is a third-party tool and is not regulated by any financial authority. Trading through Deriv is subject to Deriv's own regulatory framework. Please ensure trading is legal in your jurisdiction.</p>
+<p>DolarHunter is a third-party tool and is not regulated by any financial authority. Trading through Deriv is subject to Deriv's own regulatory framework. Please ensure trading is legal in your jurisdiction.</p>
 
 <h4 style="color:#00d2c8;margin:14px 0 6px;">6. No Guarantee of Profit</h4>
-<p>Btraderhub makes no representation or warranty that use of the platform will result in profits. All trading results depend on market conditions, your settings, and factors beyond our control.</p>
+<p>DolarHunter makes no representation or warranty that use of the platform will result in profits. All trading results depend on market conditions, your settings, and factors beyond our control.</p>
 
 <div style="background:#00d2c814;border:1px solid #00d2c844;border-radius:8px;padding:14px;margin-top:16px;">
-    <p style="color:#00d2c8;font-weight:700;">✅ By using Btraderhub, you confirm that:</p>
+    <p style="color:#00d2c8;font-weight:700;">✅ By using DolarHunter, you confirm that:</p>
     <ul style="margin:8px 0 0 20px;color:#a0aec0;">
         <li>You are 18 years or older</li>
         <li>You understand the risks of binary options trading</li>

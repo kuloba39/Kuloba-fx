@@ -1,5 +1,5 @@
 // ========================================================
-// ⚙️ BTRADERHUB GLOBAL CONFIGURATION
+// ⚙️ DolarHunter GLOBAL CONFIGURATION
 // ========================================================
 
 const DERIV_APP_ID = "33R46H0jDH8fCzLfNq3yr"; // Your App ID from the URL we saw earlier
