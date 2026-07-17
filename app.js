@@ -7,9 +7,7 @@ const DERIV_CLIENT_ID = "33R46H0jDH8fCzLfNq3yr";
 const DERIV_APP_ID    = "33R46H0jDH8fCzLfNq3yr";
 // Auto-detect domain for DolarHunter
 // Both must be registered as redirect URIs in your Deriv app dashboard
-const DERIV_REDIRECT = (
-    window.location.hostname === 'dolarhunter.vercel.app'
-) ? 'https://dolarhunter.vercel.app/';
+const BASE_URL = 'https://dolarhunter.vercel.app/';
 
 // ── State ──────────────────────────────────────────────────────
 let derivWS          = null;
