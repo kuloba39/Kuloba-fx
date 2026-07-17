@@ -5,7 +5,7 @@
 
 const DERIV_CLIENT_ID = "33R46H0jDH8fCzLfNq3yr";
 const DERIV_APP_ID    = "33R46H0jDH8fCzLfNq3yr";
-// Auto-detect domain — works for both btraderhub.com AND btraderhub.vercel.app
+// Auto-detect domain for DolarHunter
 // Both must be registered as redirect URIs in your Deriv app dashboard
 const DERIV_REDIRECT = (
     window.location.hostname === 'dolarhunter.vercel.app'
@@ -2766,7 +2766,7 @@ const LEGAL_CONTENT = {
 <p>Btraderhub participates in the Deriv affiliate program. When you create a new Deriv account through our platform, we may receive a commission. This does not affect your trading costs or experience.</p>
 
 <h4 style="color:#00d2c8;margin:14px 0 6px;">7. Contact</h4>
-<p>For privacy concerns: <a href="mailto:support@btraderhub.com" style="color:var(--teal);">support@btraderhub.com</a></p>`
+<p>For privacy concerns: <a href="mailto:support@dolarhunter.com" style="color:var(--teal);">support@dolarhunter.com</a></p>`
     },
 
     risk: {
