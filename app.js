@@ -3,8 +3,8 @@
 // Auth: Amy-verified PKCE (DO NOT CHANGE)
 // ================================================================
 
-const DERIV_CLIENT_ID = "33ByqD0GecGTE5whirko8";
-const DERIV_APP_ID    = "33ByqD0GecGTE5whirko8";
+const DERIV_CLIENT_ID = "33R46H0jDH8fCzLfNq3yr";
+const DERIV_APP_ID    = "33R46H0jDH8fCzLfNq3yr";
 // Auto-detect domain — works for both btraderhub.com AND btraderhub.vercel.app
 // Both must be registered as redirect URIs in your Deriv app dashboard
 const DERIV_REDIRECT = (

@@ -10,7 +10,7 @@ export default async function handler(req, res) {
     const { code, state } = await parseBody(req);
     if (!code || !state) return res.status(400).json({ error: 'Missing code or state' });
 
-    const clientId = process.env.DERIV_CLIENT_ID || "33ByqD0GecGTE5whirko8";
+    const clientId = process.env.DERIV_CLIENT_ID;
 
     // Decrypt code_verifier from state token
     let code_verifier, redirectUri;
