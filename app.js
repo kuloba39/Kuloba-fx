@@ -8,9 +8,8 @@ const DERIV_APP_ID    = "33R46H0jDH8fCzLfNq3yr";
 // Auto-detect domain — works for both btraderhub.com AND btraderhub.vercel.app
 // Both must be registered as redirect URIs in your Deriv app dashboard
 const DERIV_REDIRECT = (
-    window.location.hostname === 'btraderhub.com' ||
-    window.location.hostname === 'www.btraderhub.com'
-) ? 'https://btraderhub.com/' : 'https://btraderhub.vercel.app/';
+    window.location.hostname === 'dolarhunter.vercel.app'
+) ? 'https://dolarhunter.vercel.app/';
 
 // ── State ──────────────────────────────────────────────────────
 let derivWS          = null;
@@ -2722,7 +2721,7 @@ const LEGAL_CONTENT = {
 <h4 style="color:#00d2c8;margin:14px 0 6px;">9. Governing Law</h4>
 <p>These Terms are governed by applicable international law. Any disputes shall be resolved through binding arbitration.</p>
 
-<p style="margin-top:16px;color:#4a5568;font-size:11px;">For questions: support@btraderhub.com</p>`
+<p style="margin-top:16px;color:#4a5568;font-size:11px;">For questions: support@dolarhunter.com</p>`
     },
 
     privacy: {
