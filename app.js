@@ -348,9 +348,8 @@ async function loginWithDeriv() {
 
 
 function signUpWithDeriv() {
-    window.location.href = "https://track.deriv.com/_Yi8lkjLk8sFMjdsyM5hasGNd7ZgqdRLk/1/";
+    window.location.href = "https://deriv.partners/rx?sidc=8B8F9D51-BE70-494B-BC59-C011F5E6D3D1&utm_campaign=dynamicworks&utm_medium=affiliate&utm_source=CU169074";
 }
-
 // ================================================================
 // AUTH — STEP 2: Callback
 // ================================================================
