@@ -166,18 +166,35 @@ function getRecoveryTrade(direction, pred) {
     return null;
 }
 
-// Contract type map
 const CONTRACT_MAP = {
-    over_under:     { over:"DIGITOVER", under:"DIGITUNDER" },
-    even_odd:       { even:"DIGITEVEN", odd:"DIGITODD" },
-
-    matches_differs: {
-        match:"DIGITMATCH",
-        differ:"DIGITDIFF"
+    over_under: {
+        over: "DIGITOVER",
+        under: "DIGITUNDER"
     },
 
-    rise_fall:      { rise:"CALL", fall:"PUT" },
-    only_ups_downs: { ups:"RUNHIGH", downs:"RUNLOW" }
+    even_odd: {
+        even: "DIGITEVEN",
+        odd: "DIGITODD"
+    },
+
+    digit_match: {
+        match: "DIGITMATCH"
+    },
+
+    matches_differs: {
+        match: "DIGITMATCH",
+        differ: "DIGITDIFF"
+    },
+
+    rise_fall: {
+        rise: "CALL",
+        fall: "PUT"
+    },
+
+    only_ups_downs: {
+        ups: "RUNHIGH",
+        downs: "RUNLOW"
+    }
 };
 
 // ================================================================
@@ -978,20 +995,37 @@ function runBotLogic(digit, quote) {
     // ALL contract types trade on every tick at full Deriv speed
     // Deriv's engine decides win/loss — we just fire as fast as possible
     switch(type) {
-        case 'over_under':
-            // Only trade when digit confirms direction (improves win rate)
-            if (botDirection === 'over'  && digit > pred)  { lastEntrySpot = quote; executeContract(quote); }
-            if (botDirection === 'under' && digit < pred)  { lastEntrySpot = quote; executeContract(quote); }
-            break;
 
-        case 'even_odd':
-        case 'rise_fall':
-        case 'only_ups_downs':
-            // Trade on EVERY tick — maximum speed, same as Deriv
+    case 'over_under':
+        // Only trade when digit confirms direction
+        if (botDirection === 'over' && digit > pred) {
             lastEntrySpot = quote;
             executeContract(quote);
-            break;
-    }
+        }
+
+        if (botDirection === 'under' && digit < pred) {
+            lastEntrySpot = quote;
+            executeContract(quote);
+        }
+        break;
+
+
+    case 'digit_match':
+        // Trade when predicted digit appears
+        if (digit === pred) {
+            lastEntrySpot = quote;
+            executeContract(quote);
+        }
+        break;
+
+
+    case 'even_odd':
+    case 'rise_fall':
+    case 'only_ups_downs':
+        lastEntrySpot = quote;
+        executeContract(quote);
+        break;
+}
 }
 
 // Auto-reset pendingContract if proposal takes too long (5 seconds)
@@ -1085,9 +1119,10 @@ function executeContract(entrySpot) {
     // Barrier for over/under
     if (
     type === 'over_under' ||
-    type === 'matches_differs'
+    type === 'matches_differs' ||
+    type === 'digit_match'
 ) {
-    proposal.barrier = prediction;
+    proposal.barrier = pred;
 }
 
     pendingContract  = true;
