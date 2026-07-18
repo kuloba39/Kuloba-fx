@@ -2576,13 +2576,20 @@ function applySignalToBot(sig) {
     // Apply market if signal has one
     if (sig.symbol && mktSel) mktSel.value = sig.symbol;
 
-    // Apply trade type
-    if (typeSel) { typeSel.value = sig.type; onTypeChange(); }
+   // Apply trade type
+if (typeSel) { 
+    typeSel.value = sig.type; 
+    onTypeChange(); 
+}
 
-    // Apply direction
-    selectDir(sig.botDirection);
+// Apply direction after buttons rebuild
+if (sig.botDirection) {
+    setTimeout(() => {
+        selectDir(sig.botDirection);
+    }, 50);
+}
 
-    // Apply prediction/barrier value for over_under
+    // Apply prediction/barrier value for digit contracts
     if (sig.pred !== null && sig.pred !== undefined && predEl) {
         predEl.value = sig.pred;
     }
