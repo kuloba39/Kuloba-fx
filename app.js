@@ -2215,21 +2215,25 @@ function getTopSignals(symbol, n = 5) {
         if (risePct < 50) signals.push({ direction:'Only Downs', confidence:upsConf, type:'only_ups_downs', botDirection:'downs', color:'var(--amber)', pred:null, reason:`Downward trend — ${(100-risePct).toFixed(0)}% momentum` });
     }
 
-    // ── MATCHES — only show at 95%+ confidence ──
-    const ranked = counts.map((c,d)=>({d,c})).sort((a,b)=>b.c-a.c);
-    ranked.slice(0,3).forEach(({d,c}) => {
-        const pct  = (c/total)*100;
-        const conf = Math.round(pct * 6.5); // 95% conf needs ~14.6% frequency
-        if (conf >= 95) {
-            signals.push({
-                direction:`Matches ${d}`,
-                confidence: Math.min(99, conf),
-                type:'over_under', botDirection:'over',
-                color:'var(--amber)', pred:d,
-                reason:`🔥 Digit ${d} at ${pct.toFixed(1)}% — far above expected 10%`
-            });
-        }
-    });
+    // ── DIGIT MATCH SIGNALS ──
+const ranked = counts.map((c,d)=>({d,c})).sort((a,b)=>b.c-a.c);
+
+ranked.slice(0,3).forEach(({d,c}) => {
+    const pct  = (c / total) * 100;
+    const conf = Math.round(pct * 6.5);
+
+    if (conf >= 55) {
+        signals.push({
+            type:'digit_match',
+            botDirection:'match',
+            direction:`Match ${d}`,
+            confidence: Math.min(88, conf),
+            color:'var(--amber)',
+            pred:d,
+            reason:`🔥 Digit ${d} appeared ${pct.toFixed(1)}% of ${total} ticks`
+        });
+    }
+});
 
     signals.sort((a,b) => b.confidence - a.confidence);
     return signals.slice(0, n);
