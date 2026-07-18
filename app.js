@@ -1890,15 +1890,18 @@ ranked.slice(0, 3).forEach(({d, c}) => {
     const pct = (c / total) * 100;
 
     if (pct > 11) {
-        signals.push({
-            type:'digit_match',
-            botDirection:'match',
-            direction:`Match ${d}`,
-            confidence: Math.min(88, Math.round(pct * 5)),
-            reason: `Digit ${d} appeared ${pct.toFixed(1)}% of ${total} ticks`,
-            color:'var(--amber)',
-            pred: d
-        });
+       signals.push({
+    type:'matches_differs',
+    botDirection:'matches',
+    direction:`Matches ${d}`,
+    confidence: Math.min(88, Math.round(pct * 5)),
+    reason: `Digit ${d} appeared ${pct.toFixed(1)}% of ${total} ticks`,
+    color:'var(--amber)',
+    pred: d,
+
+    symbol: symbol,
+    label: MKT[symbol] || symbol
+});
     }
 });
 
@@ -2224,14 +2227,17 @@ ranked.slice(0,3).forEach(({d,c}) => {
 
     if (conf >= 55) {
         signals.push({
-            type:'digit_match',
-            botDirection:'match',
-            direction:`Match ${d}`,
-            confidence: Math.min(88, conf),
-            color:'var(--amber)',
-            pred:d,
-            reason:`🔥 Digit ${d} appeared ${pct.toFixed(1)}% of ${total} ticks`
-        });
+    direction:`Matches ${d}`,
+    confidence: Math.min(99, conf),
+    type:'matches_differs',
+    botDirection:'matches',
+    color:'var(--amber)',
+    pred:d,
+    reason:`🔥 Digit ${d} at ${pct.toFixed(1)}% — far above expected 10%`,
+
+    symbol: symbol,
+    label: MKT[symbol] || symbol
+});
     }
 });
 
