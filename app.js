@@ -857,75 +857,7 @@ if (mm.prices.length > 1000) {
     mm.prices.shift(); 
     mm.digits.shift(); 
 }
-function getDigitRanking(symbol){
 
-    const st = digitData[symbol];
-
-    if(!st || st.digits.length < 1000) return null;
-
-    const digits = st.digits.slice(-1000);
-
-    const counts = Array(10).fill(0);
-
-    digits.forEach(d=>{
-        counts[d]++;
-    });
-
-
-    const ranked = counts.map((count,digit)=>({
-        digit,
-        count,
-        pct:(count / 1000) * 100
-    }))
-    .sort((a,b)=>b.count-a.count);
-
-
-    return {
-        green: ranked[0],
-        blue: ranked[1],
-        yellow: ranked[8],
-        red: ranked[9],
-        ranked
-    };
-}
-function getBlueMatchSignal(symbol){
-
-    const rank = getDigitRanking(symbol);
-
-    if(!rank) return null;
-
-
-    const green = rank.green;
-    const blue  = rank.blue;
-    const red   = rank.red;
-
-
-    const gap = green.pct - blue.pct;
-
-
-    if(
-        green.pct >= 12.5 &&
-        red.pct <= 9.5 &&
-        gap < 2.8
-    ){
-
-        return {
-            type:'matches_differs',
-            botDirection:'matches',
-            pred:blue.digit,
-            direction:`Matches ${blue.digit}`,
-            confidence:Math.round(green.pct * 7),
-            reason:
-            `Green ${green.digit} ${green.pct.toFixed(1)}% | `+
-            `Blue ${blue.digit} ${blue.pct.toFixed(1)}% | `+
-            `Red ${red.digit} ${red.pct.toFixed(1)}%`
-        };
-
-    }
-
-
-    return null;
-}
 
 // Consecutive tracking
 if (d === lastDigit) {
@@ -1002,6 +934,68 @@ function processRealTick(symbol, quote) {
 // processHistory — now handled inside public WS onmessage
 function processHistory(symbol, history) {
     // Handled by public WS — kept as stub to avoid errors
+}
+function getDigitRanking(symbol){
+
+    const mm = marketMemory[symbol];
+
+    if(!mm || mm.digits.length < 1000) return null;
+
+    const digits = mm.digits.slice(-1000);
+
+    const counts = Array(10).fill(0);
+
+    digits.forEach(d=>{
+        counts[d]++;
+    });
+
+    const ranked = counts.map((count,digit)=>({
+        digit,
+        count,
+        pct:(count / 1000) * 100
+    }))
+    .sort((a,b)=>b.count-a.count);
+
+    return {
+        green: ranked[0],
+        blue: ranked[1],
+        yellow: ranked[8],
+        red: ranked[9],
+        ranked
+    };
+}
+
+function getBlueMatchSignal(symbol){
+
+    const rank = getDigitRanking(symbol);
+
+    if(!rank) return null;
+
+    const green = rank.green;
+    const blue  = rank.blue;
+    const red   = rank.red;
+
+    const gap = green.pct - blue.pct;
+
+    if(
+        green.pct >= 12.5 &&
+        red.pct <= 9.5 &&
+        gap < 2.8
+    ){
+        return {
+            type:'matches_differs',
+            botDirection:'matches',
+            pred:blue.digit,
+            direction:`Matches ${blue.digit}`,
+            confidence:Math.round(green.pct * 7),
+            reason:
+            `Green ${green.digit} ${green.pct.toFixed(1)}% | ` +
+            `Blue ${blue.digit} ${blue.pct.toFixed(1)}% | ` +
+            `Red ${red.digit} ${red.pct.toFixed(1)}%`
+        };
+    }
+
+    return null;
 }
 
 // ================================================================
