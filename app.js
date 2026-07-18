@@ -1027,12 +1027,17 @@ function runBotLogic(digit, quote) {
 
 
     case 'digit_match':
-        // Trade when predicted digit appears
-        if (digit === pred) {
-            lastEntrySpot = quote;
-            executeContract(quote);
-        }
-        break;
+    console.log("DIGIT MATCH CHECK", {
+        digit: digit,
+        prediction: pred
+    });
+
+    if (digit === pred) {
+        console.log("DIGIT MATCH TRIGGERED");
+        lastEntrySpot = quote;
+        executeContract(quote);
+    }
+    break;
 
 
     case 'even_odd':
