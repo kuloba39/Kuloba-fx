@@ -844,16 +844,96 @@ if (botType === 'digit_match') {
 }
 
             // Update market memory for AI
-            if (!marketMemory[sym]) marketMemory[sym] = { prices: [], digits: [], ticks: 0 };
-            const mm = marketMemory[sym];
-            mm.prices.push(data.tick.quote);
-            mm.digits.push(d);
-            mm.ticks++;
-            if (mm.prices.length > 500) { mm.prices.shift(); mm.digits.shift(); }
+if (!marketMemory[sym]) marketMemory[sym] = { prices: [], digits: [], ticks: 0 };
 
-            // Consecutive tracking
-            if (d === lastDigit) consecutiveSame++;
-            else { consecutiveSame = 1; lastDigit = d; }
+const mm = marketMemory[sym];
+
+mm.prices.push(data.tick.quote);
+mm.digits.push(d);
+mm.ticks++;
+
+// Keep last 1000 ticks for digit ranking strategy
+if (mm.prices.length > 1000) { 
+    mm.prices.shift(); 
+    mm.digits.shift(); 
+}
+function getDigitRanking(symbol){
+
+    const st = digitData[symbol];
+
+    if(!st || st.digits.length < 1000) return null;
+
+    const digits = st.digits.slice(-1000);
+
+    const counts = Array(10).fill(0);
+
+    digits.forEach(d=>{
+        counts[d]++;
+    });
+
+
+    const ranked = counts.map((count,digit)=>({
+        digit,
+        count,
+        pct:(count / 1000) * 100
+    }))
+    .sort((a,b)=>b.count-a.count);
+
+
+    return {
+        green: ranked[0],
+        blue: ranked[1],
+        yellow: ranked[8],
+        red: ranked[9],
+        ranked
+    };
+}
+function getBlueMatchSignal(symbol){
+
+    const rank = getDigitRanking(symbol);
+
+    if(!rank) return null;
+
+
+    const green = rank.green;
+    const blue  = rank.blue;
+    const red   = rank.red;
+
+
+    const gap = green.pct - blue.pct;
+
+
+    if(
+        green.pct >= 12.5 &&
+        red.pct <= 9.5 &&
+        gap < 2.8
+    ){
+
+        return {
+            type:'matches_differs',
+            botDirection:'matches',
+            pred:blue.digit,
+            direction:`Matches ${blue.digit}`,
+            confidence:Math.round(green.pct * 7),
+            reason:
+            `Green ${green.digit} ${green.pct.toFixed(1)}% | `+
+            `Blue ${blue.digit} ${blue.pct.toFixed(1)}% | `+
+            `Red ${red.digit} ${red.pct.toFixed(1)}%`
+        };
+
+    }
+
+
+    return null;
+}
+
+// Consecutive tracking
+if (d === lastDigit) {
+    consecutiveSame++;
+} else { 
+    consecutiveSame = 1; 
+    lastDigit = d; 
+}
 
             // Update digit stats UI
             if (sym === currentDigitMkt) {
@@ -1040,17 +1120,26 @@ if (digit === pred) {
 }
 break;
     case 'matches_differs':
-    // Trade when predicted digit appears/disappears
-    if (botDirection === 'matches' && digit === pred) {
+
+    const market = document.getElementById('bot-market')?.value;
+
+    const signal = getBlueMatchSignal(market);
+
+
+    if(
+        signal &&
+        botDirection === 'matches' &&
+        digit === signal.pred
+    ){
+
+        console.log("BLUE MATCH ENTRY", signal);
+
         lastEntrySpot = quote;
         executeContract(quote);
+
     }
 
-    if (botDirection === 'differs' && digit !== pred) {
-        lastEntrySpot = quote;
-        executeContract(quote);
-    }
-    break;
+break;
 
 
     case 'even_odd':
