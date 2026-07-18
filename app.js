@@ -1003,6 +1003,16 @@ function validateBot() {
 let proposalTimeout = null;
 
 function runBotLogic(digit, quote) {
+
+    console.log("BOT LOGIC REACHED", {
+        running: isBotRunning,
+        pending: pendingContract,
+        digit: digit,
+        quote: quote,
+        type: document.getElementById('bot-type')?.value,
+        pred: document.getElementById('bot-pred')?.value
+    });
+
     if (!isBotRunning || pendingContract) return;
 
     const type = document.getElementById('bot-type')?.value || 'over_under';
