@@ -165,8 +165,7 @@ function getRecoveryTrade(direction, pred) {
     }
     return null;
 }
-
-const CONTRACT_MAP = {
+ const CONTRACT_MAP = {
     over_under: {
         over: "DIGITOVER",
         under: "DIGITUNDER"
@@ -182,8 +181,8 @@ const CONTRACT_MAP = {
     },
 
     matches_differs: {
-        match: "DIGITMATCH",
-        differ: "DIGITDIFF"
+        matches: "DIGITMATCH",
+        differs: "DIGITDIFF"
     },
 
     rise_fall: {
@@ -196,6 +195,7 @@ const CONTRACT_MAP = {
         downs: "RUNLOW"
     }
 };
+
 
 // ================================================================
 // PAGE LOAD
