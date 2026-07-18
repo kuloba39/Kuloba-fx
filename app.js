@@ -1004,15 +1004,6 @@ let proposalTimeout = null;
 
 function runBotLogic(digit, quote) {
 
-    console.log("BOT LOGIC REACHED", {
-        running: isBotRunning,
-        pending: pendingContract,
-        digit: digit,
-        quote: quote,
-        type: document.getElementById('bot-type')?.value,
-        pred: document.getElementById('bot-pred')?.value
-    });
-
     if (!isBotRunning || pendingContract) return;
 
     const type = document.getElementById('bot-type')?.value || 'over_under';
@@ -1037,17 +1028,17 @@ function runBotLogic(digit, quote) {
 
 
     case 'digit_match':
-    console.log("DIGIT MATCH CHECK", {
-        digit: digit,
-        prediction: pred
-    });
+console.log("DIGIT MATCH CHECK", {
+    digit: digit,
+    prediction: pred
+});
 
-    if (digit === pred) {
-        console.log("DIGIT MATCH TRIGGERED");
-        lastEntrySpot = quote;
-        executeContract(quote);
-    }
-    break;
+if (digit === pred) {
+    console.log("DIGIT MATCH TRIGGERED");
+    lastEntrySpot = quote;
+    executeContract(quote);
+}
+break;
     case 'matches_differs':
     // Trade when predicted digit appears/disappears
     if (botDirection === 'matches' && digit === pred) {
