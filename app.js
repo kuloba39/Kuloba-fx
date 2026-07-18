@@ -1889,7 +1889,7 @@ function generateSignal(symbol) {
 ranked.slice(0, 3).forEach(({d, c}) => {
     const pct = (c / total) * 100;
 
-    if (pct > 13) {
+    if (pct > 11) {
         signals.push({
             type:'digit_match',
             botDirection:'match',
@@ -1902,8 +1902,10 @@ ranked.slice(0, 3).forEach(({d, c}) => {
     }
 });
 
-    // Sort all signals by confidence, pick the best
-    signals.sort((a,b) => b.confidence - a.confidence);
+    console.log("AI GENERATED SIGNALS", signals);
+
+// Sort all signals by confidence, pick the best
+signals.sort((a,b) => b.confidence - a.confidence);
     const best = signals[0];
     if (!best) return null;
 
