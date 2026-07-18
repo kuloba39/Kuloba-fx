@@ -826,18 +826,21 @@ function connectPublicWS() {
             if (isNaN(d)) return;
 
             addDigitToRolling(sym, d);
-            // Update Digit Match prediction
-const predEl = document.getElementById('bot-pred');
+            /// Update Digit Match prediction only
+const botType = document.getElementById('bot-type')?.value;
 
-if (predEl && digitData[sym].ticks > 20) {
-    const counts = digitData[sym].counts;
+if (botType === 'digit_match') {
+    const predEl = document.getElementById('bot-pred');
 
-    // Choose least frequent digit in rolling window
-    const predictedDigit = counts
-        .map((count, digit) => ({ digit, count }))
-        .sort((a, b) => a.count - b.count)[0].digit;
+    if (predEl && digitData[sym].ticks > 20) {
+        const counts = digitData[sym].counts;
 
-    predEl.value = predictedDigit;
+        const predictedDigit = counts
+            .map((count, digit) => ({ digit, count }))
+            .sort((a, b) => a.count - b.count)[0].digit;
+
+        predEl.value = predictedDigit;
+    }
 }
 
             // Update market memory for AI
@@ -1673,8 +1676,14 @@ function onTypeChange() {
         wrap.appendChild(btn);
     });
 
-    // Show prediction for digit types
-    if (pred) pred.style.display = ['over_under'].includes(type) ? 'block' : 'none';
+    // Show prediction for digit contracts
+if (pred) {
+    pred.style.display = [
+        'over_under',
+        'digit_match',
+        'matches_differs'
+    ].includes(type) ? 'block' : 'none';
+}
 
     if (opts.length > 0) selectDir(opts[0][0]);
     updateInfoBar();
