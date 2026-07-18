@@ -826,6 +826,19 @@ function connectPublicWS() {
             if (isNaN(d)) return;
 
             addDigitToRolling(sym, d);
+            // Update Digit Match prediction
+const predEl = document.getElementById('bot-pred');
+
+if (predEl && digitData[sym].ticks > 20) {
+    const counts = digitData[sym].counts;
+
+    // Choose least frequent digit in rolling window
+    const predictedDigit = counts
+        .map((count, digit) => ({ digit, count }))
+        .sort((a, b) => a.count - b.count)[0].digit;
+
+    predEl.value = predictedDigit;
+}
 
             // Update market memory for AI
             if (!marketMemory[sym]) marketMemory[sym] = { prices: [], digits: [], ticks: 0 };
