@@ -1108,22 +1108,27 @@ function runBotLogic(digit, quote) {
 
 
     case 'digit_match':
-console.log("DIGIT MATCH CHECK", {
-    digit: digit,
-    prediction: pred
-});
 
-if (digit === pred) {
-    console.log("DIGIT MATCH TRIGGERED");
+const blueSignal = getBlueMatchSignal(digit);
+
+if (blueSignal) {
+
+    console.log("BLUE MATCH ENTRY", blueSignal);
+
+    document.getElementById('bot-pred').value =
+        blueSignal.pred;
+
     lastEntrySpot = quote;
+
     executeContract(quote);
 }
+
 break;
     case 'matches_differs':
 
     const market = document.getElementById('bot-market')?.value;
 
-    const signal = getBlueMatchSignal(market);
+    const signal = getBlueMatchSignal(digit);
 
 
     if(
