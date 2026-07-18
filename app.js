@@ -170,6 +170,12 @@ function getRecoveryTrade(direction, pred) {
 const CONTRACT_MAP = {
     over_under:     { over:"DIGITOVER", under:"DIGITUNDER" },
     even_odd:       { even:"DIGITEVEN", odd:"DIGITODD" },
+
+    matches_differs: {
+        match:"DIGITMATCH",
+        differ:"DIGITDIFF"
+    },
+
     rise_fall:      { rise:"CALL", fall:"PUT" },
     only_ups_downs: { ups:"RUNHIGH", downs:"RUNLOW" }
 };
@@ -1077,9 +1083,12 @@ function executeContract(entrySpot) {
     }
 
     // Barrier for over/under
-    if (type === 'over_under') {
-        proposal.barrier = pred.toString();
-    }
+    if (
+    type === 'over_under' ||
+    type === 'matches_differs'
+) {
+    proposal.barrier = prediction;
+}
 
     pendingContract  = true;
     lastContractId   = "pending";
@@ -1599,11 +1608,12 @@ function onTypeChange() {
     wrap.innerHTML = '';
 
     const dirMap = {
-        over_under:     [['over','Over Only'],['under','Under Only']],
-        even_odd:       [['even','Even Only'],['odd','Odd Only']],
-        rise_fall:      [['rise','Rise Only'],['fall','Fall Only']],
-        only_ups_downs: [['ups','Only Ups'],['downs','Only Downs']]
-    };
+    over_under: [['over','Over Only'],['under','Under Only']],
+    even_odd: [['even','Even'],['odd','Odd']],
+    rise_fall: [['rise','Rise'],['fall','Fall']],
+    only_ups_downs: [['ups','Ups'],['downs','Downs']],
+    matches_differs: [['matches','Matches'],['differs','Differs']]
+};
 
     const opts = dirMap[type] || [];
     opts.forEach(([val, label]) => {
