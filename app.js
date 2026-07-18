@@ -1048,6 +1048,18 @@ function runBotLogic(digit, quote) {
         executeContract(quote);
     }
     break;
+    case 'matches_differs':
+    // Trade when predicted digit appears/disappears
+    if (botDirection === 'matches' && digit === pred) {
+        lastEntrySpot = quote;
+        executeContract(quote);
+    }
+
+    if (botDirection === 'differs' && digit !== pred) {
+        lastEntrySpot = quote;
+        executeContract(quote);
+    }
+    break;
 
 
     case 'even_odd':
