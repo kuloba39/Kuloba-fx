@@ -1677,11 +1677,34 @@ function onTypeChange() {
     wrap.innerHTML = '';
 
     const dirMap = {
-    over_under: [['over','Over Only'],['under','Under Only']],
-    even_odd: [['even','Even'],['odd','Odd']],
-    rise_fall: [['rise','Rise'],['fall','Fall']],
-    only_ups_downs: [['ups','Ups'],['downs','Downs']],
-    matches_differs: [['matches','Matches'],['differs','Differs']]
+    over_under: [
+        ['over','Over Only'],
+        ['under','Under Only']
+    ],
+
+    digit_match: [
+        ['match','Match']
+    ],
+
+    even_odd: [
+        ['even','Even'],
+        ['odd','Odd']
+    ],
+
+    rise_fall: [
+        ['rise','Rise'],
+        ['fall','Fall']
+    ],
+
+    only_ups_downs: [
+        ['ups','Ups'],
+        ['downs','Downs']
+    ],
+
+    matches_differs: [
+        ['matches','Matches'],
+        ['differs','Differs']
+    ]
 };
 
     const opts = dirMap[type] || [];
@@ -1861,20 +1884,23 @@ function generateSignal(symbol) {
         });
     }
 
-    // ── HOT DIGIT MATCHES ──
-    // If a digit appears far more than expected (>14% vs expected 10%)
-    ranked.slice(0, 3).forEach(({d, c}) => {
-        const pct = (c / total) * 100;
-        if (pct > 13) {
-            signals.push({
-                type:'over_under', botDirection:'over',
-                direction:`Matches ${d}`,
-                confidence: Math.min(88, Math.round(pct * 5)),
-                reason: `Digit ${d} appeared ${pct.toFixed(1)}% (expected 10%)`,
-                color:'var(--amber)', pred: d
-            });
-        }
-    });
+    // ── DIGIT MATCH STRATEGY ──
+// Find digits with abnormal frequency
+ranked.slice(0, 3).forEach(({d, c}) => {
+    const pct = (c / total) * 100;
+
+    if (pct > 13) {
+        signals.push({
+            type:'digit_match',
+            botDirection:'match',
+            direction:`Match ${d}`,
+            confidence: Math.min(88, Math.round(pct * 5)),
+            reason: `Digit ${d} appeared ${pct.toFixed(1)}% of ${total} ticks`,
+            color:'var(--amber)',
+            pred: d
+        });
+    }
+});
 
     // Sort all signals by confidence, pick the best
     signals.sort((a,b) => b.confidence - a.confidence);
