@@ -1300,7 +1300,13 @@ if (activeAISignal) {
 
     // Map to Deriv contract type
     const typeMap      = CONTRACT_MAP[type];
-    const contractType = typeMap?.[botDirection];
+    const contractType = typeMap?.[botDirection];console.log("EXECUTE CONTRACT DEBUG", {
+    activeAISignal,
+    type,
+    botDirection,
+    pred,
+    contractType
+});
     console.log("FINAL CONTRACT TYPE:", {
     type,
     botDirection,
@@ -1370,7 +1376,9 @@ if (activeAISignal) {
     lastEntrySpot    = entrySpot;
 
     log(`📋 Proposal: ${contractType} @ $${currentStake.toFixed(2)} | ${MKT[market]||market} | dur:${proposal.duration||'?'}${proposal.duration_unit||''}${proposal.barrier?' barrier:'+proposal.barrier:''}`, 'i');
-    derivWS.send(JSON.stringify(proposal));
+    console.log("PROPOSAL GOING TO DERIV", proposal);
+
+derivWS.send(JSON.stringify(proposal));
 
     // Start timeout — reset if proposal takes more than 5 seconds
     startProposalTimeout();
