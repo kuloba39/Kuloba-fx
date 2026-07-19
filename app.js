@@ -1262,9 +1262,30 @@ function executeContract(entrySpot) {
 let pred = parseInt(document.getElementById('bot-pred')?.value || 5);
 
 
+// AI SIGNAL OVERRIDE
+if (activeAISignal) {
+
+    type = activeAISignal.type;
+    botDirection = activeAISignal.botDirection;
+
+    if (
+        activeAISignal.pred !== null &&
+        activeAISignal.pred !== undefined
+    ) {
+        pred = Number(activeAISignal.pred);
+    }
+
+    console.log("AI EXECUTION VALUES", {
+        type,
+        botDirection,
+        pred,
+        confidence: activeAISignal.confidence
+    });
+}
 
 
-    const duration  = parseInt(document.getElementById('bot-dur')?.value  || 1);
+
+const duration  = parseInt(document.getElementById('bot-dur')?.value || 1);
 
     // Map to Deriv contract type
     const typeMap      = CONTRACT_MAP[type];
@@ -2096,7 +2117,26 @@ console.log(
 );
 
 // Sort all signals by confidence, pick the best
-signals.sort((a,b) => b.confidence - a.confidence);
+// PRIORITY ORDER
+const priority = {
+    matches_differs: 1,
+    digit_match: 1,
+    over_under: 2,
+    even_odd: 3,
+    rise_fall: 4,
+    only_ups_downs: 5
+};
+
+signals.sort((a,b)=>{
+
+    const pa = priority[a.type] || 99;
+    const pb = priority[b.type] || 99;
+
+    if (pa !== pb) return pa - pb;
+
+    return b.confidence - a.confidence;
+});
+
 
 const best = signals[0];
 if (!best) return null;
