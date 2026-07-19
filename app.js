@@ -1254,10 +1254,12 @@ function executeContract(entrySpot) {
 let pred = parseInt(document.getElementById('bot-pred')?.value || 5);
 
 
-// AI SIGNAL OVERRIDE
+// AI SIGNAL APPLY (direction + prediction only)
 if (activeAISignal) {
 
-    type = activeAISignal.type;
+    // DO NOT override contract type
+    // type stays from bot-type dropdown
+
     botDirection = activeAISignal.botDirection;
 
     if (
@@ -1267,7 +1269,6 @@ if (activeAISignal) {
         pred = Number(activeAISignal.pred);
     }
 
-   
 }
 
 
@@ -2125,9 +2126,8 @@ if (activeAISignal) {
 
     const typeBox = document.getElementById('bot-type');
 
-    if (typeBox) {
-        typeBox.value = activeAISignal.type;
-    }
+    // DO NOT CHANGE CONTRACT TYPE FROM AI
+// Keep user's selected bot type
 
 
     botDirection = activeAISignal.botDirection;
