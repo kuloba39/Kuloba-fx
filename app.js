@@ -1104,7 +1104,56 @@ if (activeAISignal) {
     // Keep the user's selected contract type
     const selectedType = document.getElementById('bot-type')?.value;
 
-    botDirection = activeAISignal.botDirection;
+    // AI DIRECTION NORMALIZER
+
+let aiDirection = activeAISignal.botDirection;
+
+
+// matches/differs must map to their own contract type
+
+if (
+    activeAISignal.type === "matches_differs"
+) {
+
+    if (aiDirection === "matches") {
+
+        type = "matches_differs";
+
+    }
+
+    if (aiDirection === "differs") {
+
+        type = "matches_differs";
+
+    }
+
+}
+
+
+// even/odd must stay even_odd
+
+if (
+    activeAISignal.type === "even_odd"
+) {
+
+    if (
+        aiDirection === "matches" ||
+        aiDirection === "differs"
+    ) {
+
+        console.log(
+            "AI direction mismatch corrected"
+        );
+
+        aiDirection =
+            "even";
+
+    }
+
+}
+
+
+botDirection = aiDirection;
 
     if (activeAISignal.pred !== null &&
         activeAISignal.pred !== undefined) {
@@ -2179,11 +2228,43 @@ signals.sort((a,b)=>{
 });
 
 
-const best = signals[0];
-if (!best) return null;
+// FILTER SIGNALS BY USER SELECTED CONTRACT
+
+const selectedType =
+    document.getElementById('bot-type')?.value;
+
+
+
+const filteredSignals =
+    signals.filter(sig => {
+
+        return sig.type === selectedType;
+
+    });
+
+
+
+const best =
+    filteredSignals.sort(
+        (a,b)=>b.confidence-a.confidence
+    )[0];
+
+
+
+if (!best) {
+
+    console.log(
+        "NO MATCHING AI SIGNAL FOR",
+        selectedType
+    );
+
+    return null;
+
+}
+
+
 
 activeAISignal = best;
-
 
 
 
