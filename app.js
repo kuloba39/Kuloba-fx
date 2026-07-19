@@ -1158,12 +1158,7 @@ if (activeAISignal) {
     }
 
 
-    console.log("AI TRADE USING:", {
-        type,
-        botDirection,
-        pred,
-        confidence: activeAISignal.confidence
-    });
+
 }
 
     // ALL contract types trade on every tick at full Deriv speed
@@ -1201,7 +1196,7 @@ break;
         activeAISignal.pred !== undefined
     ) {
 
-        console.log("AI MATCH ENTRY", activeAISignal);
+        
 
         document.getElementById('bot-pred').value =
             activeAISignal.pred;
@@ -1273,12 +1268,7 @@ if (activeAISignal) {
         pred = Number(activeAISignal.pred);
     }
 
-    console.log("AI EXECUTION VALUES", {
-        type,
-        botDirection,
-        pred,
-        confidence: activeAISignal.confidence
-    });
+   
 }
 
 
@@ -1287,19 +1277,9 @@ const duration  = parseInt(document.getElementById('bot-dur')?.value || 1);
 
     // Map to Deriv contract type
     const typeMap      = CONTRACT_MAP[type];
-    const contractType = typeMap?.[botDirection];console.log("EXECUTE CONTRACT DEBUG", {
-    activeAISignal,
-    type,
-    botDirection,
-    pred,
-    contractType
-});
-    console.log("FINAL CONTRACT TYPE:", {
-    type,
-    botDirection,
-    contractType,
-    pred
-});
+    const contractType = typeMap?.[botDirection];
+
+    
 
     if (!contractType) {
         log(`❌ Invalid direction "${botDirection}" for type "${type}" — auto-fixing...`, 'x');
@@ -1363,7 +1343,7 @@ const duration  = parseInt(document.getElementById('bot-dur')?.value || 1);
     lastEntrySpot    = entrySpot;
 
     log(`📋 Proposal: ${contractType} @ $${currentStake.toFixed(2)} | ${MKT[market]||market} | dur:${proposal.duration||'?'}${proposal.duration_unit||''}${proposal.barrier?' barrier:'+proposal.barrier:''}`, 'i');
-    console.log("PROPOSAL GOING TO DERIV", proposal);
+   
 
 derivWS.send(JSON.stringify(proposal));
 
@@ -2109,10 +2089,7 @@ signals.push({
     }
 });
 
-console.log(
-    "AI GENERATED SIGNALS FULL",
-    JSON.stringify(signals, null, 2)
-);
+
 
 // Sort all signals by confidence, pick the best
 // PRIORITY ORDER
@@ -2141,7 +2118,7 @@ if (!best) return null;
 
 activeAISignal = best;
 
-console.log("ACTIVE AI SIGNAL", activeAISignal);
+
 
 
 // APPLY AI SIGNAL TO BOT SETTINGS
