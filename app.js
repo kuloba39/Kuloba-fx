@@ -1258,44 +1258,12 @@ function executeContract(entrySpot) {
 
     const market = document.getElementById('bot-market')?.value || 'R_10';
 
-let type = document.getElementById('bot-type')?.value || 'over_under';
-
-
+    let type = document.getElementById('bot-type')?.value || 'over_under';
 let pred = parseInt(document.getElementById('bot-pred')?.value || 5);
-// AI signal has priority over manual selection
-if (activeAISignal) {
-    type = activeAISignal.type;
-    botDirection = activeAISignal.botDirection;
-
-    console.log("AI OVERRIDE CONTRACT TYPE:", {
-        type,
-        botDirection,
-        pred: activeAISignal.pred
-    });
-}
 
 
-// Override with AI signal
-if (activeAISignal) {
-
-    type = activeAISignal.type;
-
-    botDirection = activeAISignal.botDirection;
-
-    if (activeAISignal.pred !== null &&
-        activeAISignal.pred !== undefined) {
-
-        pred = Number(activeAISignal.pred);
-    }
 
 
-    console.log("AI EXECUTION VALUES", {
-        type,
-        botDirection,
-        pred,
-        confidence: activeAISignal.confidence
-    });
-}
     const duration  = parseInt(document.getElementById('bot-dur')?.value  || 1);
 
     // Map to Deriv contract type
@@ -2136,6 +2104,44 @@ if (!best) return null;
 activeAISignal = best;
 
 console.log("ACTIVE AI SIGNAL", activeAISignal);
+
+
+// APPLY AI SIGNAL TO BOT SETTINGS
+if (activeAISignal) {
+
+    const typeBox = document.getElementById('bot-type');
+
+    if (typeBox) {
+        typeBox.value = activeAISignal.type;
+    }
+
+
+    botDirection = activeAISignal.botDirection;
+
+
+    if (
+        activeAISignal.pred !== null &&
+        activeAISignal.pred !== undefined
+    ) {
+
+        const predBox = document.getElementById('bot-pred');
+
+        if (predBox) {
+            predBox.value = activeAISignal.pred;
+        }
+    }
+
+
+    renderDirButtons();
+    updateInfoBar();
+
+
+    console.log("AI SETTINGS APPLIED", {
+        type: activeAISignal.type,
+        botDirection,
+        pred: activeAISignal.pred
+    });
+}
 
     best.symbol      = symbol;
     best.label       = MKT[symbol] || symbol;
