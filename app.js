@@ -1192,21 +1192,19 @@ case 'digit_match':
     }
 
 break;
-case 'matches_differs':
 
-    const blueSignal = getBlueMatchSignal(
-        document.getElementById('bot-market')?.value
-    );
+ case 'matches_differs':
 
     if (
-        blueSignal &&
-        digit === blueSignal.pred
+        activeAISignal &&
+        activeAISignal.pred !== null &&
+        activeAISignal.pred !== undefined
     ) {
 
-        console.log("BLUE MATCH ENTRY", blueSignal);
+        console.log("AI MATCH ENTRY", activeAISignal);
 
         document.getElementById('bot-pred').value =
-            blueSignal.pred;
+            activeAISignal.pred;
 
         lastEntrySpot = quote;
 
