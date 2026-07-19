@@ -2,57 +2,81 @@
 
 const MARTINGALE_MULTIPLIER = 2.1;
 
-let baseStake = 1;
-let currentStake = 1;
+
+window.MartingaleState =
+    window.MartingaleState || {
+
+        baseStake: 1,
+        currentStake: 1
+
+    };
+
 
 
 function setBaseStake(stake) {
 
-    baseStake = Number(stake);
-    currentStake = Number(stake);
+    window.MartingaleState.baseStake =
+        Number(stake);
+
+
+    window.MartingaleState.currentStake =
+        Number(stake);
 
 }
+
 
 
 function getStake() {
 
-    return Number(currentStake);
+    return Number(
+        window.MartingaleState.currentStake
+    );
 
 }
+
 
 
 function onWin() {
 
-    currentStake = baseStake;
+    window.MartingaleState.currentStake =
+        window.MartingaleState.baseStake;
 
-    return currentStake;
+
+    return window.MartingaleState.currentStake;
 
 }
+
 
 
 function onLoss() {
 
-    currentStake =
+    window.MartingaleState.currentStake =
         Number(
             (
-                currentStake *
+                window.MartingaleState.currentStake *
                 MARTINGALE_MULTIPLIER
             ).toFixed(2)
         );
 
-    return currentStake;
+
+    return window.MartingaleState.currentStake;
 
 }
+
 
 
 function resetMartingale() {
 
-    currentStake = baseStake;
+    window.MartingaleState.currentStake =
+        window.MartingaleState.baseStake;
 
 }
 
 
+
 window.Martingale = {
+
+    setBaseStake,
 
     getStake,
 
