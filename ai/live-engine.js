@@ -4,14 +4,10 @@ const {
     scanAllMarkets
 } = require('./signal-scanner');
 
+const {
+    selectBestSignal
+} = require('./trade-controller');
 
-console.log(
-    "AI ALL SIGNALS FOUND",
-    opportunities
-);
-
-
-return opportunities;
 
 
 // Store tick history
