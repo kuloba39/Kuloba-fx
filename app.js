@@ -1993,13 +1993,16 @@ ranked.slice(0, 3).forEach(({d, c}) => {
     const pct = (c / total) * 100;
 
     if (pct > 11) {
-       signals.push({
+signals.push({
     type:'matches_differs',
     botDirection:'matches',
     direction:`Matches ${d}`,
     confidence: Math.min(88, Math.round(pct * 5)),
     reason: `Digit ${d} appeared ${pct.toFixed(1)}% of ${total} ticks`,
     color:'var(--amber)',
+
+    digit: d,
+    prediction: d,
     pred: d,
 
     symbol: symbol,
@@ -2008,7 +2011,16 @@ ranked.slice(0, 3).forEach(({d, c}) => {
     }
 });
 
-    console.log("AI GENERATED SIGNALS", signals);
+    console.log(
+    "AI GENERATED SIGNALS",
+    signals.map(s => ({
+        type: s.type,
+        digit: s.digit,
+        prediction: s.prediction,
+        confidence: s.confidence,
+        score: s.score
+    }))
+);
 
 // Sort all signals by confidence, pick the best
 signals.sort((a,b) => b.confidence - a.confidence);
