@@ -1038,11 +1038,42 @@ function toggleBot() {
     const btn = document.getElementById('run-btn');
 
     if (!isBotRunning) {
-        // Pre-flight validation
-        const err = validateBot();
-        if (err) { notify("Cannot Start", err, 'err'); log("❌ " + err, 'x'); return; }
 
-        isBotRunning = true;
+    // Apply AI signal before starting bot
+    if (activeAISignal) {
+
+        document.getElementById('bot-type').value =
+            activeAISignal.type;
+
+        botDirection =
+            activeAISignal.botDirection;
+
+        if (activeAISignal.pred !== null &&
+            activeAISignal.pred !== undefined) {
+
+            document.getElementById('bot-pred').value =
+                activeAISignal.pred;
+        }
+
+
+        console.log("RUN USING AI SIGNAL", {
+            type: activeAISignal.type,
+            botDirection: activeAISignal.botDirection,
+            pred: activeAISignal.pred
+        });
+    }
+
+
+    // Pre-flight validation
+    const err = validateBot();
+    if (err) { 
+        notify("Cannot Start", err, 'err'); 
+        log("❌ " + err, 'x'); 
+        return; 
+    }
+
+
+    isBotRunning = true;
         baseStake    = parseFloat(document.getElementById('bot-stake')?.value || 1);
         currentStake = baseStake;
 
