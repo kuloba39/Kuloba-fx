@@ -33,7 +33,7 @@ let lastContractId   = null;
 let lastEntrySpot    = null;
 let aiAutoEnabled    = true;
 let pendingContract  = false;
-
+let aiSettingsApplied = false;
 // Digit data — real ticks only
 let digitData        = {};
 let currentDigitMkt  = "R_10";
@@ -727,19 +727,20 @@ if (r.msg_type === 'history' && r.history) {
 
     const sym = r.echo_req?.ticks_history;
 
+
     if (sym) {
 
-        // EXISTING HISTORY LOADER
+        // Existing bot history
         processHistory(
             sym,
             r.history
         );
 
 
-        // AI INITIAL 1000 TICKS
-        if (typeof processAIHistory === "function") {
+        // AI history preload
+        if (window.AIEngine) {
 
-            processAIHistory(
+            window.AIEngine.processHistory(
                 sym,
                 r.history.prices
             );
@@ -2187,7 +2188,7 @@ activeAISignal = best;
 
 
 // APPLY AI SIGNAL TO BOT SETTINGS
-if (activeAISignal) {
+if (activeAISignal && !aiSettingsApplied) {
 
     const typeBox = document.getElementById('bot-type');
 
@@ -2196,6 +2197,7 @@ if (activeAISignal) {
 
 
     botDirection = activeAISignal.botDirection;
+    
 
 
     if (
@@ -2224,6 +2226,9 @@ console.log("AI SETTINGS APPLIED", {
     botDirection,
     pred: activeAISignal.pred
 });
+
+    aiSettingsApplied = true;
+
 }
 
     best.symbol      = symbol;

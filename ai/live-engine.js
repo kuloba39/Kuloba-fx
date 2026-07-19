@@ -146,12 +146,54 @@ function processTick(
 
 
 }
+function processHistory(symbol, prices) {
+
+    if (!prices || !prices.length) {
+        return;
+    }
+
+
+    marketTicks[symbol] = [];
+
+
+    for (const price of prices) {
+
+        const digit =
+            Number(
+                String(price).slice(-1)
+            );
+
+
+        marketTicks[symbol].push(digit);
+
+    }
+
+
+    // keep only latest 1000
+
+    if (marketTicks[symbol].length > MAX_TICKS) {
+
+        marketTicks[symbol] =
+            marketTicks[symbol].slice(-MAX_TICKS);
+
+    }
+
+
+    console.log(
+        "AI HISTORY LOADED",
+        symbol,
+        marketTicks[symbol].length
+    );
+
+}
 
 
 
 window.AIEngine = {
 
     processTick,
+
+    processHistory,
 
     runAI,
 
