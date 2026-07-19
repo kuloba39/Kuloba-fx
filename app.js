@@ -1040,28 +1040,27 @@ function toggleBot() {
     if (!isBotRunning) {
 
     // Apply AI signal before starting bot
-    if (activeAISignal) {
+if (activeAISignal) {
 
-        document.getElementById('bot-type').value =
-            activeAISignal.type;
+    // Keep the user's selected contract type
+    const selectedType = document.getElementById('bot-type')?.value;
 
-        botDirection =
-            activeAISignal.botDirection;
+    botDirection = activeAISignal.botDirection;
 
-        if (activeAISignal.pred !== null &&
-            activeAISignal.pred !== undefined) {
+    if (activeAISignal.pred !== null &&
+        activeAISignal.pred !== undefined) {
 
-            document.getElementById('bot-pred').value =
-                activeAISignal.pred;
-        }
-
-
-        console.log("RUN USING AI SIGNAL", {
-            type: activeAISignal.type,
-            botDirection: activeAISignal.botDirection,
-            pred: activeAISignal.pred
-        });
+        document.getElementById('bot-pred').value =
+            activeAISignal.pred;
     }
+
+    console.log("RUN USING AI SIGNAL", {
+        type: selectedType,
+        aiType: activeAISignal.type,
+        botDirection: activeAISignal.botDirection,
+        pred: activeAISignal.pred
+    });
+}
 
 
     // Pre-flight validation
