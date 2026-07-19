@@ -237,12 +237,34 @@ function getBlueMatchSignal(symbol){
     const red   = rank.red;
 
     const gap = green.pct - blue.pct;
+    console.log("BLUE RANKING", {
+    greenDigit: green.digit,
+    greenPct: green.pct,
+
+    blueDigit: blue.digit,
+    bluePct: blue.pct,
+
+    redDigit: red.digit,
+    redPct: red.pct,
+
+    gap
+});
 
     if(
         green.pct >= 12.5 &&
         red.pct <= 9.5 &&
         gap < 2.8
-    ){
+    )
+    console.log("RANK CHECK", {
+    greenDigit: green.digit,
+    greenPct: green.pct,
+    blueDigit: blue.digit,
+    bluePct: blue.pct,
+    redDigit: red.digit,
+    redPct: red.pct,
+    gap
+});
+    {
         return {
             type:'matches_differs',
             botDirection:'matches',
@@ -1102,41 +1124,33 @@ function runBotLogic(digit, quote) {
         break;
 
 
-    case 'digit_match':
+case 'digit_match':
 
-const blueSignal = getBlueMatchSignal(digit);
-
-if (blueSignal) {
-
-    console.log("BLUE MATCH ENTRY", blueSignal);
-
-    document.getElementById('bot-pred').value =
-        blueSignal.pred;
-
-    lastEntrySpot = quote;
-
-    executeContract(quote);
-}
-
-break;
-    case 'matches_differs':
-
-    const market = document.getElementById('bot-market')?.value;
-
-    const signal = getBlueMatchSignal(digit);
-
-
-    if(
-        signal &&
-        botDirection === 'matches' &&
-        digit === signal.pred
-    ){
-
-        console.log("BLUE MATCH ENTRY", signal);
-
+    if (digit === pred) {
         lastEntrySpot = quote;
         executeContract(quote);
+    }
 
+break;
+case 'matches_differs':
+
+    const blueSignal = getBlueMatchSignal(
+        document.getElementById('bot-market')?.value
+    );
+
+    if (
+        blueSignal &&
+        digit === blueSignal.pred
+    ) {
+
+        console.log("BLUE MATCH ENTRY", blueSignal);
+
+        document.getElementById('bot-pred').value =
+            blueSignal.pred;
+
+        lastEntrySpot = quote;
+
+        executeContract(quote);
     }
 
 break;
