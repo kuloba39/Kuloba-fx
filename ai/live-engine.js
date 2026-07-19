@@ -1,12 +1,16 @@
 // ai/live-engine.js
 
 // browser AI dependencies
-const scanAllMarkets =
-    window.SignalScanner.scanAllMarkets;
+const opportunities =
+    window.SignalScanner.scanAllMarkets(
+        marketTicks
+    );
 
 
-const selectBestSignal =
-    window.TradeController.selectBestSignal;
+const best =
+    window.TradeController.selectBestSignal(
+        opportunities
+    );;
 
 
 

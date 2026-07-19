@@ -1,48 +1,43 @@
 // ai/signal-scanner.js
 
-const markets =
-    window.AIMarkets;
-
-
-const scanMarket =
-    window.ScannerEngine.scanMarket;
+window.SignalScanner =
+window.SignalScanner || {};
 
 
 
-function scanAllMarkets(
-    marketData
-) {
-
-    const opportunities = [];
+function scanAllMarkets(marketData){
 
 
+    const opportunities=[];
 
-    for (const symbol of markets) {
+
+
+    for(const symbol of window.Markets){
+
 
         const ticks =
             marketData[symbol];
 
 
-
-        if (!ticks) {
+        if(!ticks){
             continue;
         }
 
 
 
         const results =
-            scanMarket(
+            window.ScannerEngine.scanMarket(
                 symbol,
                 ticks
             );
 
 
-
-        if (results.length) {
+        if(results.length){
 
             opportunities.push(
                 ...results
             );
+
         }
 
     }
@@ -50,9 +45,8 @@ function scanAllMarkets(
 
 
     opportunities.sort(
-        (a, b) =>
-            b.confidence -
-            a.confidence
+        (a,b)=>
+        b.confidence-a.confidence
     );
 
 
@@ -63,8 +57,5 @@ function scanAllMarkets(
 
 
 
-window.SignalScanner = {
-
-    scanAllMarkets
-
-};
+window.SignalScanner.scanAllMarkets =
+    scanAllMarkets;

@@ -1,41 +1,38 @@
 // ai/scanner-engine.js
 
-const runStrategies =
-    window.AIManager.runStrategies;
-
+window.ScannerEngine = window.ScannerEngine || {};
 
 
 function buildScanner(ticks) {
 
     const counts = Array(10).fill(0);
 
+
     for (const digit of ticks) {
 
-        if (
-            digit >= 0 &&
-            digit <= 9
-        ) {
+        if (digit >= 0 && digit <= 9) {
             counts[digit]++;
         }
 
     }
 
+
     const total = ticks.length || 1;
 
+
     const distribution = counts.map(c =>
-
-        Number(
-            ((c / total) * 100).toFixed(2)
-        )
-
+        Number(((c / total) * 100).toFixed(2))
     );
 
+
     const ranked = distribution
-        .map((percent, digit) => ({
+        .map((percent, digit)=>({
             digit,
             percent
         }))
-        .sort((a, b) => b.percent - a.percent);
+        .sort((a,b)=>b.percent-a.percent);
+
+
 
     return {
 
@@ -44,27 +41,20 @@ function buildScanner(ticks) {
         ranked,
 
         green: ranked[0],
-
         blue: ranked[1],
-
         yellow: ranked[8],
-
         red: ranked[9],
 
         greenBlueDiff:
-            Number(
-                Math.abs(
-                    ranked[0].percent -
-                    ranked[1].percent
-                ).toFixed(2)
+            Math.abs(
+                ranked[0].percent -
+                ranked[1].percent
             ),
 
         yellowRedDiff:
-            Number(
-                Math.abs(
-                    ranked[8].percent -
-                    ranked[9].percent
-                ).toFixed(2)
+            Math.abs(
+                ranked[8].percent -
+                ranked[9].percent
             )
 
     };
@@ -73,18 +63,17 @@ function buildScanner(ticks) {
 
 
 
-function scanMarket(symbol, tickHistory) {
+function scanMarket(symbol,tickHistory){
 
-    if (!tickHistory) {
+
+    if(!tickHistory){
         return [];
     }
 
 
-
-    if (tickHistory.length < 1000) {
+    if(tickHistory.length < 1000){
         return [];
     }
-
 
 
     const scanner =
@@ -93,14 +82,14 @@ function scanMarket(symbol, tickHistory) {
 
 
     const signals =
-        runStrategies(
+        window.AIManager.runStrategies(
             scanner,
             tickHistory
         );
 
 
 
-    return signals.map(sig => ({
+    return signals.map(sig=>({
 
         ...sig,
 
@@ -112,10 +101,9 @@ function scanMarket(symbol, tickHistory) {
 
 
 
-window.ScannerEngine = {
+window.ScannerEngine.buildScanner =
+    buildScanner;
 
-    buildScanner,
 
-    scanMarket
-
-};
+window.ScannerEngine.scanMarket =
+    scanMarket;

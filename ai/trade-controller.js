@@ -1,25 +1,39 @@
 // ai/trade-controller.js
 
+
 const isRecoveryMode =
-    window.Recovery.isRecoveryMode;
+    window.Recovery?.isRecoveryMode ||
+    function(){ return false; };
+
 
 const startRecovery =
-    window.Recovery.startRecovery;
+    window.Recovery?.startRecovery ||
+    function(){};
+
 
 const stopRecovery =
-    window.Recovery.stopRecovery;
+    window.Recovery?.stopRecovery ||
+    function(){};
 
 
 const getStake =
-    window.Martingale.getStake;
+    window.Martingale?.getStake ||
+    function(){ return 1; };
+
 
 const onWin =
-    window.Martingale.onWin;
+    window.Martingale?.onWin ||
+    function(){};
+
 
 const onLoss =
-    window.Martingale.onLoss;
+    window.Martingale?.onLoss ||
+    function(){};
 
 
+
+
+// SELECT BEST AI SIGNAL
 
 function selectBestSignal(
     opportunities
@@ -29,17 +43,16 @@ function selectBestSignal(
         !opportunities ||
         !opportunities.length
     ) {
+
         return null;
+
     }
 
 
-
     opportunities.sort(
-        (a, b) =>
-            b.confidence -
-            a.confidence
+        (a,b)=>
+            b.confidence - a.confidence
     );
-
 
 
     return opportunities[0];
@@ -48,10 +61,13 @@ function selectBestSignal(
 
 
 
+
+
 function handleLoss(
     signal,
     market
 ) {
+
 
     onLoss();
 
@@ -62,38 +78,47 @@ function handleLoss(
         signal.direction === "under"
     ) {
 
+
         startRecovery(
             signal,
             market
         );
 
+
         console.log(
             "RECOVERY STARTED"
         );
+
     }
 
 }
 
 
 
-function handleWin() {
+
+
+function handleWin(){
 
     onWin();
 
 
 
-    if (
+    if(
         isRecoveryMode()
-    ) {
+    ){
 
         stopRecovery();
+
 
         console.log(
             "RECOVERY COMPLETED"
         );
+
     }
 
 }
+
+
 
 
 
