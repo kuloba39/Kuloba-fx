@@ -1225,9 +1225,34 @@ function clearProposalTimeout() {
 function executeContract(entrySpot) {
     if (!isBotRunning || pendingContract) return;
 
-    const market    = document.getElementById('bot-market')?.value || 'R_10';
-    const type      = document.getElementById('bot-type')?.value   || 'over_under';
-    const pred      = parseInt(document.getElementById('bot-pred')?.value || 5);
+    const market = document.getElementById('bot-market')?.value || 'R_10';
+
+let type = document.getElementById('bot-type')?.value || 'over_under';
+
+let pred = parseInt(document.getElementById('bot-pred')?.value || 5);
+
+
+// Override with AI signal
+if (activeAISignal) {
+
+    type = activeAISignal.type;
+
+    botDirection = activeAISignal.botDirection;
+
+    if (activeAISignal.pred !== null &&
+        activeAISignal.pred !== undefined) {
+
+        pred = Number(activeAISignal.pred);
+    }
+
+
+    console.log("AI EXECUTION VALUES", {
+        type,
+        botDirection,
+        pred,
+        confidence: activeAISignal.confidence
+    });
+}
     const duration  = parseInt(document.getElementById('bot-dur')?.value  || 1);
 
     // Map to Deriv contract type
