@@ -1229,7 +1229,19 @@ function executeContract(entrySpot) {
 
 let type = document.getElementById('bot-type')?.value || 'over_under';
 
+
 let pred = parseInt(document.getElementById('bot-pred')?.value || 5);
+// AI signal has priority over manual selection
+if (activeAISignal) {
+    type = activeAISignal.type;
+    botDirection = activeAISignal.botDirection;
+
+    console.log("AI OVERRIDE CONTRACT TYPE:", {
+        type,
+        botDirection,
+        pred: activeAISignal.pred
+    });
+}
 
 
 // Override with AI signal
@@ -1258,6 +1270,12 @@ if (activeAISignal) {
     // Map to Deriv contract type
     const typeMap      = CONTRACT_MAP[type];
     const contractType = typeMap?.[botDirection];
+    console.log("FINAL CONTRACT TYPE:", {
+    type,
+    botDirection,
+    contractType,
+    pred
+});
 
     if (!contractType) {
         log(`❌ Invalid direction "${botDirection}" for type "${type}" — auto-fixing...`, 'x');
