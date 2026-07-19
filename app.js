@@ -44,6 +44,7 @@ let marketMemory     = {};
 
 // Signal tracking
 let seenSignals      = new Set();
+let activeAISignal = null;
 let signalHistory    = [];
 
 // Audio — coins for win, cash register ding, realistic loss sound
@@ -1103,8 +1104,36 @@ function runBotLogic(digit, quote) {
 
     if (!isBotRunning || pendingContract) return;
 
-    const type = document.getElementById('bot-type')?.value || 'over_under';
-    const pred = parseInt(document.getElementById('bot-pred')?.value || 5);
+let type = document.getElementById('bot-type')?.value || 'over_under';
+let pred = parseInt(document.getElementById('bot-pred')?.value || 5);
+
+
+if (activeAISignal) {
+
+    type = activeAISignal.type;
+
+    botDirection = activeAISignal.botDirection;
+
+    if (activeAISignal.pred !== null &&
+        activeAISignal.pred !== undefined) {
+
+        pred = Number(activeAISignal.pred);
+
+        const predBox = document.getElementById('bot-pred');
+
+        if (predBox) {
+            predBox.value = pred;
+        }
+    }
+
+
+    console.log("AI TRADE USING:", {
+        type,
+        botDirection,
+        pred,
+        confidence: activeAISignal.confidence
+    });
+}
 
     // ALL contract types trade on every tick at full Deriv speed
     // Deriv's engine decides win/loss — we just fire as fast as possible
@@ -2018,8 +2047,13 @@ console.log(
 
 // Sort all signals by confidence, pick the best
 signals.sort((a,b) => b.confidence - a.confidence);
-    const best = signals[0];
-    if (!best) return null;
+
+const best = signals[0];
+if (!best) return null;
+
+activeAISignal = best;
+
+console.log("ACTIVE AI SIGNAL", activeAISignal);
 
     best.symbol      = symbol;
     best.label       = MKT[symbol] || symbol;
