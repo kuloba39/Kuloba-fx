@@ -87,6 +87,6 @@ function checkUnder6(scanner, tickHistory) {
 
 }
 
-module.exports = {
-    checkUnder6
-};
+window.AIStrategies = window.AIStrategies || {};
+
+window.AIStrategies.checkUnder6 = checkUnder6;

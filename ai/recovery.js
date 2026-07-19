@@ -59,9 +59,7 @@ function getOriginalMarket() {
 
 
 
-module.exports = {
-
-    startRecovery,
+window.Recovery = {
 
     stopRecovery,
 

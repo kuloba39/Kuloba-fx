@@ -65,6 +65,6 @@ function checkMatch(scanner) {
 
 
 
-module.exports = {
-    checkMatch
-};
+window.AIStrategies = window.AIStrategies || {};
+
+window.AIStrategies.checkMatch = checkMatch;

@@ -1,21 +1,23 @@
 // ai/trade-controller.js
 
-const {
+const isRecoveryMode =
+    window.Recovery.isRecoveryMode;
 
-    isRecoveryMode,
-    startRecovery,
-    stopRecovery
+const startRecovery =
+    window.Recovery.startRecovery;
 
-} = require('./recovery');
+const stopRecovery =
+    window.Recovery.stopRecovery;
 
 
-const {
+const getStake =
+    window.Martingale.getStake;
 
-    getStake,
-    onWin,
-    onLoss
+const onWin =
+    window.Martingale.onWin;
 
-} = require('./martingale');
+const onLoss =
+    window.Martingale.onLoss;
 
 
 
@@ -95,7 +97,7 @@ function handleWin() {
 
 
 
-module.exports = {
+window.TradeController = {
 
     selectBestSignal,
 

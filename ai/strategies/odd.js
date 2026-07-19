@@ -137,6 +137,6 @@ function checkOdd(scanner, tickHistory) {
 
 
 
-module.exports = {
-    checkOdd
-};
+window.AIStrategies = window.AIStrategies || {};
+
+window.AIStrategies.checkOdd = checkOdd;

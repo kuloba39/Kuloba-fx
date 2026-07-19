@@ -1,12 +1,12 @@
 // ai/live-engine.js
 
-const {
-    scanAllMarkets
-} = require('./signal-scanner');
+// browser AI dependencies
+const scanAllMarkets =
+    window.SignalScanner.scanAllMarkets;
 
-const {
-    selectBestSignal
-} = require('./trade-controller');
+
+const selectBestSignal =
+    window.TradeController.selectBestSignal;
 
 
 

@@ -1,20 +1,41 @@
 // ai/ai-manager.js
 
-const { checkMatch }   = require('./strategies/match');
-const { checkDiffers } = require('./strategies/differs');
+// Browser AI strategies
+const checkMatch =
+    window.AIStrategies.checkMatch;
 
-const { checkEven } = require('./strategies/even');
-const { checkOdd }  = require('./strategies/odd');
+const checkDiffers =
+    window.AIStrategies.checkDiffers;
 
-const { checkOver1 } = require('./strategies/over1');
-const { checkOver2 } = require('./strategies/over2');
-const { checkOver3 } = require('./strategies/over3');
-const { checkOver6 } = require('./strategies/over6');
+const checkEven =
+    window.AIStrategies.checkEven;
 
-const { checkUnder8 } = require('./strategies/under8');
-const { checkUnder7 } = require('./strategies/under7');
-const { checkUnder6 } = require('./strategies/under6');
-const { checkUnder3 } = require('./strategies/under3');
+const checkOdd =
+    window.AIStrategies.checkOdd;
+
+const checkOver1 =
+    window.AIStrategies.checkOver1;
+
+const checkOver2 =
+    window.AIStrategies.checkOver2;
+
+const checkOver3 =
+    window.AIStrategies.checkOver3;
+
+const checkOver6 =
+    window.AIStrategies.checkOver6;
+
+const checkUnder8 =
+    window.AIStrategies.checkUnder8;
+
+const checkUnder7 =
+    window.AIStrategies.checkUnder7;
+
+const checkUnder6 =
+    window.AIStrategies.checkUnder6;
+
+const checkUnder3 =
+    window.AIStrategies.checkUnder3;
 
 
 function runStrategies(scanner, tickHistory) {

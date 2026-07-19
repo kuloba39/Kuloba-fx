@@ -125,6 +125,6 @@ function checkEven(scanner, tickHistory) {
 
 
 
-module.exports = {
-    checkEven
-};
+window.AIStrategies = window.AIStrategies || {};
+
+window.AIStrategies.checkEven = checkEven;

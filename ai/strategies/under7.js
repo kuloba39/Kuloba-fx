@@ -89,6 +89,6 @@ function checkUnder7(scanner, tickHistory) {
     };
 }
 
-module.exports = {
-    checkUnder7
-};
+window.AIStrategies = window.AIStrategies || {};
+
+window.AIStrategies.checkUnder7 = checkUnder7;

@@ -1,11 +1,11 @@
 // ai/signal-scanner.js
 
 const markets =
-    require('./markets');
+    window.AIMarkets;
 
-const {
-    scanMarket
-} = require('./scanner-engine');
+
+const scanMarket =
+    window.ScannerEngine.scanMarket;
 
 
 
@@ -63,6 +63,8 @@ function scanAllMarkets(
 
 
 
-module.exports = {
+window.SignalScanner = {
+
     scanAllMarkets
+
 };

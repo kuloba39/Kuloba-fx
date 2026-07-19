@@ -102,6 +102,6 @@ function checkDiffers(scanner) {
 
 
 
-module.exports = {
-    checkDiffers
-};
+window.AIStrategies = window.AIStrategies || {};
+
+window.AIStrategies.checkDiffers = checkDiffers;

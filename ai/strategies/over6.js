@@ -103,6 +103,6 @@ function checkOver6(scanner, tickHistory) {
 
 
 
-module.exports = {
-    checkOver6
-};
+window.AIStrategies = window.AIStrategies || {};
+
+window.AIStrategies.checkOver6 = checkOver6;

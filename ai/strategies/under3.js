@@ -84,6 +84,6 @@ function checkUnder3(scanner, tickHistory) {
 
 }
 
-module.exports = {
-    checkUnder3
-};
+window.AIStrategies = window.AIStrategies || {};
+
+window.AIStrategies.checkUnder3 = checkUnder3;

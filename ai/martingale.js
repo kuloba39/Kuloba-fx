@@ -52,9 +52,7 @@ function resetMartingale() {
 }
 
 
-module.exports = {
-
-    setBaseStake,
+window.Martingale = {
 
     getStake,
 

@@ -83,6 +83,6 @@ function checkUnder8(scanner, tickHistory) {
     };
 }
 
-module.exports = {
-    checkUnder8
-};
+window.AIStrategies = window.AIStrategies || {};
+
+window.AIStrategies.checkUnder8 = checkUnder8;

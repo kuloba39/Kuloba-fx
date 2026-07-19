@@ -1,6 +1,7 @@
 // ai/scanner-engine.js
 
-const { runStrategies } = require('./ai-manager');
+const runStrategies =
+    window.AIManager.runStrategies;
 
 
 
@@ -111,10 +112,10 @@ function scanMarket(symbol, tickHistory) {
 
 
 
-module.exports = {
+window.ScannerEngine = {
 
     buildScanner,
 
     scanMarket
 
-}
+};
