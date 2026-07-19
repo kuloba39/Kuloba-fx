@@ -2011,15 +2011,9 @@ signals.push({
     }
 });
 
-    console.log(
-    "AI GENERATED SIGNALS",
-    signals.map(s => ({
-        type: s.type,
-        digit: s.digit,
-        prediction: s.prediction,
-        confidence: s.confidence,
-        score: s.score
-    }))
+console.log(
+    "AI GENERATED SIGNALS FULL",
+    JSON.stringify(signals, null, 2)
 );
 
 // Sort all signals by confidence, pick the best
