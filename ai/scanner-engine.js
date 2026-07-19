@@ -8,8 +8,6 @@ function buildScanner(ticks) {
 
     const counts = Array(10).fill(0);
 
-
-
     for (const digit of ticks) {
 
         if (
@@ -18,13 +16,10 @@ function buildScanner(ticks) {
         ) {
             counts[digit]++;
         }
+
     }
 
-
-
     const total = ticks.length || 1;
-
-
 
     const distribution = counts.map(c =>
 
@@ -34,8 +29,6 @@ function buildScanner(ticks) {
 
     );
 
-
-
     const ranked = distribution
         .map((percent, digit) => ({
             digit,
@@ -43,11 +36,11 @@ function buildScanner(ticks) {
         }))
         .sort((a, b) => b.percent - a.percent);
 
-
-
     return {
 
         distribution,
+
+        ranked,
 
         green: ranked[0],
 
@@ -55,7 +48,23 @@ function buildScanner(ticks) {
 
         yellow: ranked[8],
 
-        red: ranked[9]
+        red: ranked[9],
+
+        greenBlueDiff:
+            Number(
+                Math.abs(
+                    ranked[0].percent -
+                    ranked[1].percent
+                ).toFixed(2)
+            ),
+
+        yellowRedDiff:
+            Number(
+                Math.abs(
+                    ranked[8].percent -
+                    ranked[9].percent
+                ).toFixed(2)
+            )
 
     };
 
@@ -108,4 +117,4 @@ module.exports = {
 
     scanMarket
 
-};
+}

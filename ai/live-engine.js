@@ -5,10 +5,13 @@ const {
 } = require('./signal-scanner');
 
 
-const {
-    selectBestSignal
-} = require('./trade-controller');
+console.log(
+    "AI ALL SIGNALS FOUND",
+    opportunities
+);
 
+
+return opportunities;
 
 
 // Store tick history
@@ -88,25 +91,26 @@ function runAI() {
 
 
 
-    const best =
-        selectBestSignal(
-            opportunities
-        );
+console.log(
+    "AI OPPORTUNITIES",
+    opportunities
+);
 
+const best =
+    selectBestSignal(
+        opportunities
+    );
 
+if (best) {
 
-    if (best) {
+    console.log(
+        "AI BEST SIGNAL",
+        best
+    );
 
-        console.log(
-            "AI SIGNAL FOUND",
-            best
-        );
+}
 
-    }
-
-
-
-    return best;
+return best;
 
 }
 
