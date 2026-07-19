@@ -684,13 +684,71 @@ function routeMsg(r) {
 
     // Tick and history from authenticated WS — routed to stub
     // (real digit data comes from public WS)
-    if (r.msg_type === 'tick' && r.tick) {
-        processRealTick(r.tick.symbol, r.tick.quote);
+if (r.msg_type === 'tick' && r.tick) {
+
+    // EXISTING BOT TICK HANDLER (KEEP)
+    processRealTick(
+        r.tick.symbol,
+        r.tick.quote
+    );
+
+
+    // AI ENGINE TICK FEED (ADD)
+    if (window.AIEngine) {
+
+        window.AIEngine.processTick({
+
+            symbol: r.tick.symbol,
+
+            quote: r.tick.quote
+
+        });
+
+
+        const aiSignal =
+            window.AIEngine.runAI();
+
+
+        if (aiSignal) {
+
+            console.log(
+                "🔥 AI SIGNAL FOUND",
+                aiSignal
+            );
+
+        }
+
     }
-    if (r.msg_type === 'history' && r.history) {
-        const sym = r.echo_req?.ticks_history;
-        if (sym) processHistory(sym, r.history);
+
+}
+
+
+if (r.msg_type === 'history' && r.history) {
+
+    const sym = r.echo_req?.ticks_history;
+
+    if (sym) {
+
+        // EXISTING HISTORY LOADER
+        processHistory(
+            sym,
+            r.history
+        );
+
+
+        // AI INITIAL 1000 TICKS
+        if (typeof processAIHistory === "function") {
+
+            processAIHistory(
+                sym,
+                r.history.prices
+            );
+
+        }
+
     }
+
+}
 
     // Active symbols — store pip sizes per Amy's tip for correct last digit
     if (r.msg_type === 'active_symbols' && r.active_symbols) {
