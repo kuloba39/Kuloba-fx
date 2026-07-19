@@ -1255,10 +1255,10 @@ let pred = parseInt(document.getElementById('bot-pred')?.value || 5);
 
 
 // AI SIGNAL APPLY (direction + prediction only)
-if (activeAISignal) {
-
-    // DO NOT override contract type
-    // type stays from bot-type dropdown
+if (
+    activeAISignal &&
+    activeAISignal.type === type
+) {
 
     botDirection = activeAISignal.botDirection;
 
@@ -2150,11 +2150,15 @@ if (activeAISignal) {
     updateInfoBar();
 
 
-    console.log("AI SETTINGS APPLIED", {
-        type: activeAISignal.type,
-        botDirection,
-        pred: activeAISignal.pred
-    });
+    const currentType =
+    document.getElementById('bot-type')?.value;
+
+console.log("AI SETTINGS APPLIED", {
+    selectedType: currentType,
+    aiType: activeAISignal.type,
+    botDirection,
+    pred: activeAISignal.pred
+});
 }
 
     best.symbol      = symbol;
