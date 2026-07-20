@@ -20,7 +20,7 @@ function checkMatch(scanner) {
 
 
     // Difference must be <= 0.3%
-    if (difference > 0.10) {
+    if (difference > 0.3) {
         return null;
     }
     if (
