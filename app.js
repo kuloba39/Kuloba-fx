@@ -1182,7 +1182,7 @@ botDirection = aiDirection;
 
     isBotRunning = true;
         baseStake    = parseFloat(document.getElementById('bot-stake')?.value || 1);
-        window.aiCurrentStake = baseStake;
+        currentStake = baseStake;
 
         if (btn) { btn.textContent = '⬛ Stop'; btn.classList.remove('btn-run'); btn.classList.add('btn-stop'); }
 
@@ -1422,6 +1422,14 @@ const duration  = parseInt(document.getElementById('bot-dur')?.value || 1);
     const isRunHL    = ['RUNHIGH','RUNLOW'].includes(contractType);
 
     // Build proposal — Amy confirmed: use underlying_symbol not symbol
+    console.log(
+    "PROPOSAL STAKE",
+    {
+        currentStake,
+        baseStake,
+        contractType
+    }
+);
     const proposal = {
         proposal:           1,
         amount:             parseFloat(currentStake.toFixed(2)),
@@ -1552,7 +1560,16 @@ function handleContractResult(c) {
         log(`✅ WIN +$${profit.toFixed(2)} | Payout: $${payout.toFixed(2)}`, 'w');
         addTxRow(c.contract_type, entrySpot2, exitSpot, buyPrice, profit, true);
         // Reset stake on win
-        window.aiCurrentStake = baseStake;
+currentStake = baseStake;
+
+
+console.log(
+    "STAKE RESET",
+    {
+        currentStake,
+        baseStake
+    }
+);
 
         // If in recovery mode — switch BACK to original trade after win
         const currentType = document.getElementById('bot-type')?.value;
