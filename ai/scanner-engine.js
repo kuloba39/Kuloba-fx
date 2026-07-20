@@ -71,13 +71,17 @@ function scanMarket(symbol,tickHistory){
     }
 
 
-    if(tickHistory.length < 1000){
-        return [];
-    }
+    if(tickHistory.length < 200){
+    return [];
+     }
+
+
+    const recentTicks =
+    tickHistory.slice(-200);
 
 
     const scanner =
-        buildScanner(tickHistory);
+    buildScanner(recentTicks);
 
 
 

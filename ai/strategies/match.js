@@ -20,9 +20,25 @@ function checkMatch(scanner) {
 
 
     // Difference must be <= 0.3%
-    if (difference > 0.3) {
+    if (difference > 0.10) {
         return null;
     }
+    if (
+    greenPct < 8 ||
+    bluePct < 8
+    ) {    
+    return null;
+   }
+   console.log(
+    "MATCH CHECK",
+    {
+        greenDigit,
+        greenPct,
+        blueDigit,
+        bluePct,
+        difference
+    }
+    );
 
 
     return {
