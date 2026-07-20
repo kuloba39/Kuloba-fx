@@ -1458,9 +1458,13 @@ const duration  = parseInt(document.getElementById('bot-dur')?.value || 1);
     {
         currentStake,
         baseStake,
-        contractType
+        contractType,
+        pred,
+        type,
+        botDirection
     }
 );
+
     const proposal = {
         proposal:           1,
         amount:             parseFloat(currentStake.toFixed(2)),
@@ -1491,6 +1495,7 @@ const duration  = parseInt(document.getElementById('bot-dur')?.value || 1);
 ) {
     proposal.barrier = pred;
 }
+   console.log("FULL PROPOSAL", proposal);  
 
     pendingContract  = true;
     lastContractId   = "pending";
@@ -2267,7 +2272,6 @@ signals.push({
     color:'var(--amber)',
 
     digit: d,
-    prediction: d,
     pred: d,
 
     symbol: symbol,
