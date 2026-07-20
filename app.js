@@ -2260,10 +2260,16 @@ if (
 // Find digits with abnormal frequency
 console.log("DIGIT RANKING", JSON.stringify(ranked.slice(0,3)));
 console.log("DIGIT TOTAL", total);
-ranked.slice(0, 3).forEach(({digit, count}) => {
+ranked.slice(0, 3).forEach(({d, c}) => {
+
+    const digit = d;
+    const count = c;
+
     const pct = (count / total) * 100;
 
     if (pct > 11) {
+
+        console.log("ADDING MATCH SIGNAL", digit);
 
         signals.push({
             type:'matches_differs',
@@ -2273,10 +2279,10 @@ ranked.slice(0, 3).forEach(({digit, count}) => {
             reason: `Digit ${digit} appeared ${pct.toFixed(1)}% of ${total} ticks`,
             color:'var(--amber)',
 
-            digit: digit,
+            digit,
             pred: digit,
 
-            symbol: symbol,
+            symbol,
             label: MKT[symbol] || symbol
         });
 
