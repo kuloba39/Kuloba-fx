@@ -2279,25 +2279,19 @@ console.log("SELECTED CONTRACT", selectedType);
 console.log("AVAILABLE AI SIGNALS", signals);
 
 
-const filteredSignals =
-    signals.filter(sig => {
+console.log("SELECTED CONTRACT", selectedType);
 
-        // Digit Match compatibility
-        if (
-            selectedType === "matches_differs" &&
-            (
-                sig.type === "matches_differs" ||
-                sig.type === "digit_match" ||
-                sig.botDirection === "matches"
-            )
-        ) {
-            return true;
-        }
+console.log(
+    "AVAILABLE TYPES",
+    signals.map(s => s.type)
+);
 
 
-        return sig.type === selectedType;
+const filteredSignals = signals.filter(sig => {
 
-    });
+    return sig.type === selectedType;
+
+});
 
 
 console.log(
@@ -2306,12 +2300,9 @@ console.log(
 );
 
 
-
-const best =
-    filteredSignals.sort(
-        (a,b)=>b.confidence-a.confidence
-    )[0];
-
+const best = filteredSignals.sort(
+    (a,b)=>b.confidence-a.confidence
+)[0];
 
 
 if (!best) {
@@ -2324,11 +2315,6 @@ if (!best) {
     return null;
 
 }
-
-
-
-activeAISignal = best;
-
 
 
 // APPLY AI SIGNAL TO BOT SETTINGS
