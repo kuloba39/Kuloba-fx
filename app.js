@@ -196,6 +196,37 @@ function getRecoveryTrade(direction, pred) {
         downs: "RUNLOW"
     }
 };
+const typeAliases = {
+
+    even_odd: [
+        "even_odd",
+        "evenodd",
+        "digit_even",
+        "digiteven",
+        "DIGITEVEN",
+        "DIGITODD"
+    ],
+
+    matches_differs: [
+        "matches_differs",
+        "matches",
+        "differs",
+        "digit_match",
+        "digit_differs",
+        "DIGITMATCH",
+        "DIGITDIFF"
+    ],
+
+    over_under: [
+        "over_under",
+        "overunder",
+        "digit_over",
+        "digit_under",
+        "DIGITOVER",
+        "DIGITUNDER"
+    ]
+
+};
 function getDigitRanking(symbol){
 
     const mm = marketMemory[symbol];
@@ -2277,6 +2308,10 @@ const selectedType =
 
 console.log("SELECTED CONTRACT", selectedType);
 console.log("AVAILABLE AI SIGNALS", signals);
+console.log(
+    "AI TYPES ONLY",
+    signals.map(s => s.type)
+);
 
 
 console.log("SELECTED CONTRACT", selectedType);
@@ -2289,7 +2324,22 @@ console.log(
 
 const filteredSignals = signals.filter(sig => {
 
-    return sig.type === selectedType;
+    const signalType = sig.type
+        .toLowerCase()
+        .replace("_","");
+
+    const selected = selectedType
+        .toLowerCase()
+        .replace("_","");
+
+
+    return (
+        signalType === selected
+        ||
+        TYPE_ALIASES[selectedType]?.some(alias =>
+            alias.toLowerCase().replace("_","") === signalType
+        )
+    );
 
 });
 
