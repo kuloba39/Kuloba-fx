@@ -2258,7 +2258,7 @@ if (
 }
 
 // Find digits with abnormal frequency
-console.log("DIGIT RANKING", ranked);
+console.log("DIGIT RANKING", JSON.stringify(ranked.slice(0,3)));
 console.log("DIGIT TOTAL", total);
 ranked.slice(0, 3).forEach(({digit, count}) => {
     const pct = (count / total) * 100;
