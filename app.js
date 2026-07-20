@@ -20,8 +20,8 @@ let reconnectTimer   = null;
 // Bot state
 let isBotRunning     = false;
 let botDirection     = "over";
-let currentStake     = 1.00;
-let baseStake        = 1.00;
+let currentStake = 1.00;
+let baseStake = 1.00;
 let totalPL          = 0;
 let totalStake       = 0;
 let totalPayout      = 0;
@@ -1182,7 +1182,7 @@ botDirection = aiDirection;
 
     isBotRunning = true;
         baseStake    = parseFloat(document.getElementById('bot-stake')?.value || 1);
-        currentStake = baseStake;
+        window.aiCurrentStake = baseStake;
 
         if (btn) { btn.textContent = '⬛ Stop'; btn.classList.remove('btn-run'); btn.classList.add('btn-stop'); }
 
@@ -1552,7 +1552,7 @@ function handleContractResult(c) {
         log(`✅ WIN +$${profit.toFixed(2)} | Payout: $${payout.toFixed(2)}`, 'w');
         addTxRow(c.contract_type, entrySpot2, exitSpot, buyPrice, profit, true);
         // Reset stake on win
-        currentStake = baseStake;
+        window.aiCurrentStake = baseStake;
 
         // If in recovery mode — switch BACK to original trade after win
         const currentType = document.getElementById('bot-type')?.value;

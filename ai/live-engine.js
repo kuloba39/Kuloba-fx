@@ -3,7 +3,7 @@
 // browser AI dependencies
 const opportunities =
     window.SignalScanner.scanAllMarkets(
-        marketTicks
+        window.marketTicks
     );
 
 
@@ -16,7 +16,8 @@ const best =
 
 // Store tick history
 
-const marketTicks = {};
+window.marketTicks =
+    window.marketTicks || {};
 
 
 
@@ -31,26 +32,26 @@ const MAX_TICKS = 1000;
 function addTick(symbol, digit) {
 
 
-    if (!marketTicks[symbol]) {
+    if (!window.marketTicks[symbol]) {
 
-        marketTicks[symbol] = [];
+        window.marketTicks[symbol] = [];
 
     }
 
 
 
-    marketTicks[symbol].push(
+    window.marketTicks[symbol].push(
         digit
     );
 
 
 
     if (
-        marketTicks[symbol].length >
+        window.marketTicks[symbol].length >
         MAX_TICKS
     ) {
 
-        marketTicks[symbol]
+        window.marketTicks[symbol]
             .shift();
 
     }
@@ -63,7 +64,7 @@ function addTick(symbol, digit) {
 
 function getMarketData() {
 
-    return marketTicks;
+    return window.marketTicks;
 
 }
 
@@ -157,7 +158,7 @@ function processHistory(symbol, prices) {
     }
 
 
-    marketTicks[symbol] = [];
+    window.marketTicks[symbol] = [];
 
 
     for (const price of prices) {
@@ -168,17 +169,17 @@ function processHistory(symbol, prices) {
             );
 
 
-        marketTicks[symbol].push(digit);
+        window.marketTicks[symbol].push(digit);
 
     }
 
 
     // keep only latest 1000
 
-    if (marketTicks[symbol].length > MAX_TICKS) {
+    if (window.marketTicks[symbol].length > MAX_TICKS) {
 
-        marketTicks[symbol] =
-            marketTicks[symbol].slice(-MAX_TICKS);
+        window.marketTicks[symbol] =
+            window.marketTicks[symbol].slice(-MAX_TICKS);
 
     }
 
@@ -186,7 +187,7 @@ function processHistory(symbol, prices) {
     console.log(
         "AI HISTORY LOADED",
         symbol,
-        marketTicks[symbol].length
+        window.marketTicks[symbol].length
     );
 
 }
