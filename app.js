@@ -1389,15 +1389,14 @@ function executeContract(entrySpot) {
 
     const market = document.getElementById('bot-market')?.value || 'R_10';
 
-    let type = document.getElementById('bot-type')?.value || 'over_under';
+let type = document.getElementById('bot-type')?.value || 'over_under';
 let pred = parseInt(document.getElementById('bot-pred')?.value || 5);
 
 
-// AI SIGNAL APPLY (direction + prediction only)
-if (
-    activeAISignal &&
-    activeAISignal.type === type
-) {
+// AI SIGNAL APPLY (AI overrides UI settings)
+if (activeAISignal) {
+
+    type = activeAISignal.type;
 
     botDirection = activeAISignal.botDirection;
 
@@ -1464,6 +1463,15 @@ const duration  = parseInt(document.getElementById('bot-dur')?.value || 1);
         botDirection
     }
 );
+    console.log("FINAL TRADE VARIABLES", {
+    aiType: activeAISignal?.type,
+    aiDirection: activeAISignal?.botDirection,
+    aiPred: activeAISignal?.pred,
+    type,
+    botDirection,
+    pred,
+    contractType
+});
 
     const proposal = {
         proposal:           1,
