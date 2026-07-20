@@ -42,6 +42,10 @@ function onWin() {
         window.MartingaleState.baseStake;
 
 
+    window.currentStake =
+        window.MartingaleState.baseStake;
+
+
     return window.MartingaleState.currentStake;
 
 }

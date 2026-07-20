@@ -1,39 +1,16 @@
 // ai/trade-controller.js
 
-
-const isRecoveryMode =
-    window.Recovery?.isRecoveryMode ||
-    function(){ return false; };
+window.TradeController = window.TradeController || {};
 
 
-const startRecovery =
-    window.Recovery?.startRecovery ||
-    function(){};
+const recovery =
+    window.Recovery || {};
 
 
-const stopRecovery =
-    window.Recovery?.stopRecovery ||
-    function(){};
+const martingale =
+    window.Martingale || {};
 
 
-const getStake =
-    window.Martingale?.getStake ||
-    function(){ return 1; };
-
-
-const onWin =
-    window.Martingale?.onWin ||
-    function(){};
-
-
-const onLoss =
-    window.Martingale?.onLoss ||
-    function(){};
-
-
-
-
-// SELECT BEST AI SIGNAL
 
 function selectBestSignal(
     opportunities
@@ -43,15 +20,14 @@ function selectBestSignal(
         !opportunities ||
         !opportunities.length
     ) {
-
         return null;
-
     }
 
 
     opportunities.sort(
         (a,b)=>
-            b.confidence - a.confidence
+            b.confidence -
+            a.confidence
     );
 
 
@@ -61,28 +37,32 @@ function selectBestSignal(
 
 
 
-
-
 function handleLoss(
     signal,
     market
 ) {
 
-
-    onLoss();
-
+    if (martingale.onLoss) {
+        martingale.onLoss();
+    }
 
 
     if (
+        signal &&
+        (
         signal.direction === "over" ||
         signal.direction === "under"
+        )
     ) {
 
+        if (recovery.startRecovery) {
 
-        startRecovery(
-            signal,
-            market
-        );
+            recovery.startRecovery(
+                signal,
+                market
+            );
+
+        }
 
 
         console.log(
@@ -95,23 +75,37 @@ function handleLoss(
 
 
 
+function handleWin() {
 
+    if (isRecoveryMode()) {
 
-function handleWin(){
+        stopRecovery();
+
+        console.log(
+            "RECOVERY COMPLETED"
+        );
+
+    }
+
 
     onWin();
 
 
+    // sync AI stake back to bot stake
 
-    if(
-        isRecoveryMode()
-    ){
+    if (window.Martingale) {
 
-        stopRecovery();
+        const resetStake =
+            window.Martingale.getStake();
+
+
+        window.currentStake =
+            resetStake;
 
 
         console.log(
-            "RECOVERY COMPLETED"
+            "STAKE RESET:",
+            resetStake
         );
 
     }
@@ -120,16 +114,20 @@ function handleWin(){
 
 
 
+window.TradeController.selectBestSignal =
+    selectBestSignal;
 
 
-window.TradeController = {
+window.TradeController.handleLoss =
+    handleLoss;
 
-    selectBestSignal,
 
-    handleLoss,
+window.TradeController.handleWin =
+    handleWin;
 
-    handleWin,
 
-    getStake
-
-};
+window.TradeController.getStake =
+    martingale.getStake ||
+    function(){
+        return 1;
+    };
