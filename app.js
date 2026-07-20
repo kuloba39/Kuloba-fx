@@ -2257,26 +2257,27 @@ if (
 
 }
 
-    // ── DIGIT MATCH STRATEGY ──
 // Find digits with abnormal frequency
-ranked.slice(0, 3).forEach(({d, c}) => {
-    const pct = (c / total) * 100;
+ranked.slice(0, 3).forEach(({digit, count}) => {
+    const pct = (count / total) * 100;
 
     if (pct > 11) {
-signals.push({
-    type:'matches_differs',
-    botDirection:'matches',
-    direction:`Matches ${d}`,
-    confidence: Math.min(88, Math.round(pct * 5)),
-    reason: `Digit ${d} appeared ${pct.toFixed(1)}% of ${total} ticks`,
-    color:'var(--amber)',
 
-    digit: d,
-    pred: d,
+        signals.push({
+            type:'matches_differs',
+            botDirection:'matches',
+            direction:`Matches ${digit}`,
+            confidence: Math.min(88, Math.round(pct * 5)),
+            reason: `Digit ${digit} appeared ${pct.toFixed(1)}% of ${total} ticks`,
+            color:'var(--amber)',
 
-    symbol: symbol,
-    label: MKT[symbol] || symbol
-});
+            digit: digit,
+            pred: digit,
+
+            symbol: symbol,
+            label: MKT[symbol] || symbol
+        });
+
     }
 });
 
