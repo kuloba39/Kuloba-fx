@@ -1,23 +1,9 @@
 // ai/live-engine.js
 
-// browser AI dependencies
-const opportunities =
-    window.SignalScanner.scanAllMarkets(
-        window.marketTicks
-    );
-
-
-const best =
-    window.TradeController.selectBestSignal(
-        opportunities
-    );;
-
-
-
 // Store tick history
-
 window.marketTicks =
     window.marketTicks || {};
+
 
 
 
@@ -75,10 +61,10 @@ function getMarketData() {
 function runAI() {
 
 
-    const opportunities =
-        scanAllMarkets(
-            marketTicks
-        );
+    let opportunities =
+    window.SignalScanner.scanAllMarkets(
+        window.marketTicks
+    );
 
 
 
@@ -128,7 +114,7 @@ if (best) {
 
 }
 
-return best;
+return opportunities;
 
 }
 

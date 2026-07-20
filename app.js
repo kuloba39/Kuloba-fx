@@ -2196,6 +2196,30 @@ function generateSignal(symbol) {
             color: momentum > 0 ? 'var(--teal)' : 'var(--red)', pred: null
         });
     }
+    // =====================================================
+// AI ENGINE SIGNALS
+// =====================================================
+
+if (
+    window.AIEngine &&
+    window.AIEngine.runAI
+) {
+
+    const aiSignals =
+        window.AIEngine.runAI();
+
+
+    if (
+        Array.isArray(aiSignals)
+    ) {
+
+        signals.push(
+            ...aiSignals
+        );
+
+    }
+
+}
 
     // ── DIGIT MATCH STRATEGY ──
 // Find digits with abnormal frequency

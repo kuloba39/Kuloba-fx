@@ -48,6 +48,8 @@ function checkMatch(scanner) {
         type: "matches_differs",
 
         direction: "matches",
+        botDirection:"matches",
+        pred:blueDigit,
 
         valid: true,
 
