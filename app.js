@@ -1294,6 +1294,12 @@ if (activeAISignal) {
             predBox.value = pred;
         }
     }
+    console.log("AI FINAL LOCK BEFORE PROPOSAL", {
+    signal: activeAISignal,
+    finalType:type,
+    finalDirection:botDirection,
+    finalPred:pred
+});
 
 
 
@@ -1411,17 +1417,21 @@ if (activeAISignal) {
 
 
 
-const duration  = parseInt(document.getElementById('bot-dur')?.value || 1);
+const duration = parseInt(document.getElementById('bot-dur')?.value || 1);
 
-    // Map to Deriv contract type
-    const typeMap      = CONTRACT_MAP[type];
-    console.log("TYPE CHECK", {
+// Map to Deriv contract type
+const typeMap = CONTRACT_MAP[type];
+
+console.log("TYPE CHECK", {
     type,
     botDirection,
-    typeMap,
+    pred,
+    signalPred: activeAISignal?.pred,
+    signalDirection: activeAISignal?.botDirection,
     contractType: typeMap?.[botDirection]
 });
-    const contractType = typeMap?.[botDirection];
+
+const contractType = typeMap?.[botDirection];
     
 
     
