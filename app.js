@@ -2371,6 +2371,11 @@ console.log(
     "FILTERED AI SIGNALS",
     filteredSignals
 );
+console.log("SELECTED AI SIGNAL", filteredAISignals[0]);
+
+activeAISignal = filteredAISignals[0] || null;
+
+console.log("ACTIVE AI SIGNAL NOW", activeAISignal);
 
 
 const best = filteredSignals.sort(
