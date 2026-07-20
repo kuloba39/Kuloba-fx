@@ -2275,13 +2275,35 @@ const selectedType =
     document.getElementById('bot-type')?.value;
 
 
+console.log("SELECTED CONTRACT", selectedType);
+console.log("AVAILABLE AI SIGNALS", signals);
+
 
 const filteredSignals =
     signals.filter(sig => {
 
+        // Digit Match compatibility
+        if (
+            selectedType === "matches_differs" &&
+            (
+                sig.type === "matches_differs" ||
+                sig.type === "digit_match" ||
+                sig.botDirection === "matches"
+            )
+        ) {
+            return true;
+        }
+
+
         return sig.type === selectedType;
 
     });
+
+
+console.log(
+    "FILTERED AI SIGNALS",
+    filteredSignals
+);
 
 
 
