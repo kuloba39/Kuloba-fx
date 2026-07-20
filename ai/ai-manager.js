@@ -14,8 +14,7 @@ function runStrategies(scanner, tickHistory) {
     const strategies = [
 
         () => window.AIStrategies.checkMatch(scanner),
-
-        () => window.AIStrategies.checkDiffers(scanner),
+              
 
 
         () => window.AIStrategies.checkEven(
