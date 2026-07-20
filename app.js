@@ -2336,8 +2336,10 @@ const filteredSignals = signals.filter(sig => {
     return (
         signalType === selected
         ||
-        TYPE_ALIASES[selectedType]?.some(alias =>
-            alias.toLowerCase().replace("_","") === signalType
+        typeAliases[selectedType]?.some(alias =>
+            alias
+                .toLowerCase()
+                .replace("_","") === signalType
         )
     );
 
