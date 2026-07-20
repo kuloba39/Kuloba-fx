@@ -89,12 +89,29 @@ function runAI() {
         return null;
 
     }
+    // Remove all old MATCH strategies
+opportunities = opportunities.filter(signal => {
+
+    if (signal.type === "matches_differs") {
+
+        return signal.strategy === "DIGITMATCH";
+
+    }
+
+    return true;
+
+});
 
 
 
 console.log(
     "AI OPPORTUNITIES",
     opportunities
+);
+console.table(
+    opportunities.filter(
+        s => s.type === "matches_differs"
+    )
 );
 
 const best =

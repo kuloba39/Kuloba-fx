@@ -1,7 +1,6 @@
 // ai/strategies/match.js
 // DIGITMATCH strategy
 
-
 function checkMatch(scanner) {
 
     if (!scanner) return null;
@@ -14,30 +13,31 @@ function checkMatch(scanner) {
     const bluePct    = scanner.blue.percent;
 
 
-
-    // Strategy rules:
-    // 1. Predicted digit must be BLUE bar
-    // 2. Green and Blue percentage difference <= 0.3%
-
-
+    // Green and Blue percentage difference
     const difference = Math.abs(
         greenPct - bluePct
     );
 
 
+    // Difference must be <= 0.3%
     if (difference > 0.3) {
         return null;
     }
-
 
 
     return {
 
         strategy: "DIGITMATCH",
 
+        type: "matches_differs",
+
+        direction: "matches",
+
         valid: true,
 
         digit: blueDigit,
+
+        prediction: blueDigit,
 
         entry: "WAIT_GREEN_TOUCH",
 
@@ -46,6 +46,7 @@ function checkMatch(scanner) {
         ),
 
         reason: {
+
             green: {
                 digit: greenDigit,
                 percent: greenPct
@@ -57,12 +58,12 @@ function checkMatch(scanner) {
             },
 
             difference
+
         }
 
     };
 
 }
-
 
 
 window.AIStrategies = window.AIStrategies || {};
