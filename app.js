@@ -2371,9 +2371,9 @@ console.log(
     "FILTERED AI SIGNALS",
     filteredSignals
 );
-console.log("SELECTED AI SIGNAL", filteredAISignals[0]);
+console.log("SELECTED AI SIGNAL", filteredSignals[0]);
 
-activeAISignal = filteredAISignals[0] || null;
+activeAISignal = filteredSignals[0] || null;
 
 console.log("ACTIVE AI SIGNAL NOW", activeAISignal);
 
