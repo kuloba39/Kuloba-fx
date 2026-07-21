@@ -1278,27 +1278,54 @@ let type = document.getElementById('bot-type')?.value || 'over_under';
 let pred = parseInt(document.getElementById('bot-pred')?.value || 5);
 
 
-if (activeAISignal) {
+// USER OVER/UNDER SIGNAL HAS HIGHEST PRIORITY
+if (
+    lockedOverUnderSignal &&
+    lockedOverUnderSignal.type === 'over_under'
+) {
 
-   type = activeAISignal.type;
-   botDirection = activeAISignal.botDirection;
+    type = lockedOverUnderSignal.type;
+    botDirection = lockedOverUnderSignal.botDirection;
 
-   if (activeAISignal.pred !== null &&
-    activeAISignal.pred !== undefined) {
-
-    pred = Number(activeAISignal.pred);
-        const predBox = document.getElementById('bot-pred');
-
-        if (predBox) {
-            predBox.value = pred;
-        }
+    if (
+        lockedOverUnderSignal.pred !== null &&
+        lockedOverUnderSignal.pred !== undefined
+    ) {
+        pred = Number(lockedOverUnderSignal.pred);
     }
-    console.log("AI FINAL LOCK BEFORE PROPOSAL", {
-    signal: activeAISignal,
-    finalType:type,
-    finalDirection:botDirection,
-    finalPred:pred
-});
+
+
+    console.log("USER SIGNAL FINAL LOCK", {
+        signal: lockedOverUnderSignal,
+        finalType: type,
+        finalDirection: botDirection,
+        finalPred: pred
+    });
+
+
+}
+// OTHER CONTRACTS USE AI
+else if (activeAISignal) {
+
+    type = activeAISignal.type;
+    botDirection = activeAISignal.botDirection;
+
+    if (
+        activeAISignal.pred !== null &&
+        activeAISignal.pred !== undefined
+    ) {
+        pred = Number(activeAISignal.pred);
+    }
+
+
+    console.log("AI SIGNAL FINAL LOCK", {
+        signal: activeAISignal,
+        finalType:type,
+        finalDirection:botDirection,
+        finalPred:pred
+    });
+
+}
 
 
 
@@ -1359,7 +1386,7 @@ break;
         executeContract(quote);
         break;
 }
-}
+
 
 // Auto-reset pendingContract if proposal takes too long (5 seconds)
 function startProposalTimeout() {
