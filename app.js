@@ -3173,12 +3173,17 @@ if (sig.pred !== null && sig.pred !== undefined && predEl) {
 // LOCK ONLY USER-APPLIED OVER/UNDER SIGNAL
 if (sig.type === 'over_under') {
 
-    lockedOverUnderSignal = {
-        type: sig.type,
-        botDirection: sig.botDirection,
-        pred: sig.pred,
-        confidence: sig.confidence
-    };
+lockedOverUnderSignal = {
+    type: sig.type,
+    botDirection: sig.botDirection,
+    pred: sig.pred,
+    confidence: sig.confidence
+};
+
+console.log(
+    "USER APPLIED OVER UNDER LOCKED",
+    lockedOverUnderSignal
+);
 
     console.log(
         "USER APPLIED OVER UNDER LOCKED",
