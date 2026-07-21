@@ -1273,6 +1273,12 @@ let proposalTimeout = null;
 function runBotLogic(digit, quote) {
 
     if (!isBotRunning || pendingContract) return;
+    console.log("RUN BOT LOGIC ENTRY", {
+    isBotRunning,
+    pendingContract,
+    digit,
+    quote
+});
 
 let type = document.getElementById('bot-type')?.value || 'over_under';
 let pred = parseInt(document.getElementById('bot-pred')?.value || 5);
@@ -1330,9 +1336,23 @@ else if (activeAISignal) {
 
 
 }
+console.log("BOT LOGIC CHECK", {
+    digit,
+    quote,
+    type,
+    botDirection,
+    pred,
+    activeAISignal
+});
 
     // ALL contract types trade on every tick at full Deriv speed
     // Deriv's engine decides win/loss — we just fire as fast as possible
+    console.log("AI FINAL LOCK BEFORE PROPOSAL", {
+    type,
+    botDirection,
+    pred,
+    activeAISignal
+});
     switch(type) {
 
     case 'over_under':
