@@ -45,6 +45,7 @@ let marketMemory     = {};
 // Signal tracking
 let seenSignals      = new Set();
 let activeAISignal = null;
+let lockedOverUnderSignal = null;
 let signalHistory    = [];
 
 // Audio — coins for win, cash register ding, realistic loss sound
@@ -1397,9 +1398,30 @@ let type = document.getElementById('bot-type')?.value || 'over_under';
 let pred = parseInt(document.getElementById('bot-pred')?.value || 5);
 
 
-// LOCKED AI SIGNAL APPLY (use only applied signal)
-if (activeAISignal) {
+// OVER/UNDER USE ONLY USER APPLIED SIGNAL
+if (
+    lockedOverUnderSignal &&
+    lockedOverUnderSignal.type === 'over_under'
+) {
 
+    type = lockedOverUnderSignal.type;
+    botDirection = lockedOverUnderSignal.botDirection;
+
+    if (
+        lockedOverUnderSignal.pred !== null &&
+        lockedOverUnderSignal.pred !== undefined
+    ) {
+
+        pred = Number(lockedOverUnderSignal.pred);
+    }
+
+}
+else if (
+    activeAISignal &&
+    activeAISignal.type !== 'over_under'
+) {
+
+    // KEEP OTHER CONTRACTS WORKING AS BEFORE
     type = activeAISignal.type;
     botDirection = activeAISignal.botDirection;
 
@@ -2409,6 +2431,7 @@ if (!best) {
 
 // APPLY AI SIGNAL TO BOT SETTINGS
 if (activeAISignal && !aiSettingsApplied) {
+ 
 
     const typeBox = document.getElementById('bot-type');
 
@@ -3141,12 +3164,30 @@ if (sig.botDirection) {
     }, 50);
 }
 
-    // Apply prediction/barrier value for digit contracts
-    if (sig.pred !== null && sig.pred !== undefined && predEl) {
-        predEl.value = sig.pred;
-    }
+// Apply prediction/barrier value for digit contracts
+if (sig.pred !== null && sig.pred !== undefined && predEl) {
+    predEl.value = sig.pred;
+}
 
-    updateInfoBar();
+
+// LOCK ONLY USER-APPLIED OVER/UNDER SIGNAL
+if (sig.type === 'over_under') {
+
+    lockedOverUnderSignal = {
+        type: sig.type,
+        botDirection: sig.botDirection,
+        pred: sig.pred,
+        confidence: sig.confidence
+    };
+
+    console.log(
+        "USER APPLIED OVER UNDER LOCKED",
+        lockedOverUnderSignal
+    );
+}
+
+
+updateInfoBar();
     updateActiveBotName();
     log(`🧠 Applied: ${sig.label||sig.symbol||''} | ${sig.direction} | Pred: ${sig.pred!==null&&sig.pred!==undefined?sig.pred:'—'} | ${sig.confidence}%`, 'i');
     notify("AI Signal Applied ✅", `${sig.direction}
