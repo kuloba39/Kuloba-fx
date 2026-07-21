@@ -1286,8 +1286,30 @@ let type = document.getElementById('bot-type')?.value || 'over_under';
 let pred = parseInt(document.getElementById('bot-pred')?.value || 5);
 
 
-// USER OVER/UNDER SIGNAL HAS HIGHEST PRIORITY
-if (
+// AI SIGNAL HAS PRIORITY
+if (activeAISignal) {
+
+    type = activeAISignal.type;
+    botDirection = activeAISignal.botDirection;
+
+    if (
+        activeAISignal.pred !== null &&
+        activeAISignal.pred !== undefined
+    ) {
+        pred = Number(activeAISignal.pred);
+    }
+
+    console.log("AI SIGNAL FINAL LOCK", {
+        signal: activeAISignal,
+        finalType:type,
+        finalDirection:botDirection,
+        finalPred:pred
+    });
+
+}
+
+// USER OVER/UNDER FALLBACK
+else if (
     lockedOverUnderSignal &&
     lockedOverUnderSignal.type === 'over_under'
 ) {
@@ -1302,29 +1324,14 @@ if (
         pred = Number(lockedOverUnderSignal.pred);
     }
 
-
     console.log("USER SIGNAL FINAL LOCK", {
         signal: lockedOverUnderSignal,
-        finalType: type,
-        finalDirection: botDirection,
-        finalPred: pred
+        finalType:type,
+        finalDirection:botDirection,
+        finalPred:pred
     });
 
-
-}
-else if (activeAISignal) {
-
-    type = activeAISignal.type;
-    botDirection = activeAISignal.botDirection;
-
-    if (
-        activeAISignal.pred !== null &&
-        activeAISignal.pred !== undefined
-    ) {
-        pred = Number(activeAISignal.pred);
-    }
-
-}   // <-- closes else if
+}  // <-- closes else if
 
 
 if (activeAISignal) {
