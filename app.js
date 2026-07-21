@@ -1355,18 +1355,28 @@ console.log("BOT LOGIC CHECK", {
 });
     switch(type) {
 
-    case 'over_under':
-        // Only trade when digit confirms direction
-        if (botDirection === 'over' && digit > pred) {
-            lastEntrySpot = quote;
-            executeContract(quote);
-        }
+case 'over_under':
 
-        if (botDirection === 'under' && digit < pred) {
-            lastEntrySpot = quote;
-            executeContract(quote);
-        }
-        break;
+    console.log("OVER/UNDER CHECK", {
+        digit,
+        pred,
+        botDirection,
+        activeAISignal
+    });
+
+    if (botDirection === 'over' && digit > pred) {
+        console.log("BUY OVER");
+        lastEntrySpot = quote;
+        executeContract(quote);
+    }
+
+    if (botDirection === 'under' && digit < pred) {
+        console.log("BUY UNDER");
+        lastEntrySpot = quote;
+        executeContract(quote);
+    }
+
+    break;
 
 
 case 'digit_match':
