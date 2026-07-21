@@ -1310,7 +1310,6 @@ if (
 
 
 }
-// OTHER CONTRACTS USE AI
 else if (activeAISignal) {
 
     type = activeAISignal.type;
@@ -1323,6 +1322,10 @@ else if (activeAISignal) {
         pred = Number(activeAISignal.pred);
     }
 
+}   // <-- closes else if
+
+
+if (activeAISignal) {
 
     console.log("AI SIGNAL FINAL LOCK", {
         signal: activeAISignal,
@@ -1333,9 +1336,6 @@ else if (activeAISignal) {
 
 }
 
-
-
-}
 console.log("BOT LOGIC CHECK", {
     digit,
     quote,
@@ -1344,6 +1344,7 @@ console.log("BOT LOGIC CHECK", {
     pred,
     activeAISignal
 });
+
 
     // ALL contract types trade on every tick at full Deriv speed
     // Deriv's engine decides win/loss — we just fire as fast as possible
@@ -1416,7 +1417,7 @@ break;
         executeContract(quote);
         break;
 }
-
+}
 
 // Auto-reset pendingContract if proposal takes too long (5 seconds)
 function startProposalTimeout() {
