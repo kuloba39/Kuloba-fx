@@ -152,7 +152,9 @@ let consecutiveLosses  = 0;
 let isInRecoveryMode   = false;
 let originalDirection  = null;  // what user originally set
 let originalPrediction = null;  // what user originally set
+let recoveryStake = 0;
 const RECOVERY_TRIGGER = 2;     // losses before switching to recovery
+
 // Recovery map: if trading Over X, recover with Under (9-X) and vice versa
 // e.g. Over 1 → recover with Under 8 | Over 2 → recover with Under 7
 function getRecoveryTrade(direction, pred) {
@@ -1734,22 +1736,62 @@ console.log(
     }
 );
 
-        // If in recovery mode — switch BACK to original trade after win
-        const currentType = document.getElementById('bot-type')?.value;
-        if (currentType === 'over_under' && isInRecoveryMode && originalDirection !== null) {
-            isInRecoveryMode  = false;
-            botDirection      = originalDirection;
-            const predEl      = document.getElementById('bot-pred');
-            if (predEl && originalPrediction !== null) predEl.value = originalPrediction;
-            originalDirection  = null;
-            originalPrediction = null;
-            consecutiveLosses  = 0;
-            renderDirButtons();
-            updateInfoBar();
-            log(`🔄 Recovery complete! Back to ${botDirection.toUpperCase()} ${document.getElementById('bot-pred')?.value}`, 'i');
-            notify('✅ Recovery Complete!', `Won in recovery!
-Switched back to original: ${botDirection.toUpperCase()} ${document.getElementById('bot-pred')?.value}`, 'ok');
-        }
+// If in recovery mode — switch BACK to original trade after win
+if (isInRecoveryMode && originalDirection !== null) {
+
+
+    isInRecoveryMode = false;
+
+
+    // Restore original contract type
+    const typeEl = document.getElementById('bot-type');
+
+    if (typeEl) {
+        typeEl.value = "over_under";
+    }
+
+
+    // Restore original direction
+    botDirection = originalDirection;
+
+
+    // Restore original prediction
+    const predEl = document.getElementById('bot-pred');
+
+    if (
+        predEl &&
+        originalPrediction !== null
+    ) {
+        predEl.value = originalPrediction;
+    }
+
+
+    // Reset recovery variables
+    originalDirection  = null;
+    originalPrediction = null;
+    recoveryStake      = 0;
+    consecutiveLosses  = 0;
+
+
+    renderDirButtons();
+    updateInfoBar();
+
+
+    log(
+        `🔄 Recovery complete! Back to ${botDirection.toUpperCase()} ${document.getElementById('bot-pred')?.value}`,
+        'i'
+    );
+
+
+    notify(
+        '✅ Recovery Complete!',
+        `Won in recovery!
+Returned to original: ${botDirection.toUpperCase()} ${document.getElementById('bot-pred')?.value}`,
+        'ok'
+    );
+
+}
+
 
     } else {
         playLoss();
@@ -1764,41 +1806,76 @@ Switched back to original: ${botDirection.toUpperCase()} ${document.getElementBy
         currentStake = parseFloat((currentStake * mg).toFixed(2));
         log(`📐 Martingale: next stake $${currentStake.toFixed(2)}`, 'x');
 
-        // ── SMART RECOVERY — only for over_under ──
-        // After 2 consecutive losses, switch to high-probability recovery trade
-        // Over 1/2 → recover with Under 8/7 and vice versa
-        const currentType2 = document.getElementById('bot-type')?.value;
-        if (currentType2 === 'over_under' &&
-            consecutiveLosses >= RECOVERY_TRIGGER &&
-            !isInRecoveryMode) {
+// ── EVEN MARTINGALE RECOVERY ──
+// After 2 losses on OVER1/OVER2/UNDER7/UNDER8
+// Switch to EVEN with x2 stake
 
-            const currentPred = parseInt(document.getElementById('bot-pred')?.value || 0);
-            const recovery    = getRecoveryTrade(botDirection, currentPred);
+const currentType2 = document.getElementById('bot-type')?.value;
 
-            if (recovery) {
-                // Save original settings before switching
-                originalDirection  = botDirection;
-                originalPrediction = currentPred;
-                isInRecoveryMode   = true;
+if (
+    currentType2 === 'over_under' &&
+    consecutiveLosses >= RECOVERY_TRIGGER &&
+    !isInRecoveryMode
+) {
 
-                // Apply recovery trade
-                botDirection = recovery.direction;
-                const predEl = document.getElementById('bot-pred');
-                if (predEl) predEl.value = recovery.pred;
+    const currentPred =
+        parseInt(document.getElementById('bot-pred')?.value || 0);
 
-                renderDirButtons();
-                updateInfoBar();
 
-                log(`🚨 ${consecutiveLosses} losses! RECOVERY MODE: ${recovery.direction.toUpperCase()} ${recovery.pred}`, 'x');
-                notify(
-                    '🚨 Recovery Mode Activated',
-                    `${consecutiveLosses} consecutive losses!
-Switching to ${recovery.direction.toUpperCase()} ${recovery.pred} to recover.
-Will return to ${originalDirection.toUpperCase()} ${originalPrediction} after win.`,
-                    'warn'
-                );
-            }
+    // Only recover these low payout contracts
+    if (
+        currentPred === 1 ||
+        currentPred === 2 ||
+        currentPred === 7 ||
+        currentPred === 8
+    ) {
+
+
+        // Save original trade
+        originalDirection  = botDirection;
+        originalPrediction = currentPred;
+
+
+        // Activate recovery
+        isInRecoveryMode = true;
+
+
+        // x2 recovery stake
+        recoveryStake = currentStake * 2;
+        currentStake = parseFloat(recoveryStake.toFixed(2));
+
+
+        // Switch to EVEN
+        botDirection = "even";
+
+
+        const typeEl = document.getElementById('bot-type');
+
+        if (typeEl) {
+            typeEl.value = "even_odd";
         }
+
+
+        renderDirButtons();
+        updateInfoBar();
+
+
+        log(
+            `🚨 ${consecutiveLosses} losses! EVEN RECOVERY ACTIVE $${currentStake}`,
+            'x'
+        );
+
+
+        notify(
+            '🚨 Recovery Mode Activated',
+            `${consecutiveLosses} consecutive losses!
+Switching to EVEN with recovery stake $${currentStake}.`,
+            'warn'
+        );
+
+    }
+
+}
     }
     updateAllStats();
     checkThresholds();
