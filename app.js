@@ -45,8 +45,6 @@ let marketMemory     = {};
 // Signal tracking
 let seenSignals      = new Set();
 let activeAISignal = null;
-let lockedAISignal = null;
-let aiSignalLocked = false;
 let signalHistory    = [];
 
 // Audio — coins for win, cash register ding, realistic loss sound
@@ -1279,17 +1277,15 @@ let type = document.getElementById('bot-type')?.value || 'over_under';
 let pred = parseInt(document.getElementById('bot-pred')?.value || 5);
 
 
-if (lockedAISignal) {
+if (activeAISignal) {
 
-    type = lockedAISignal.type;
+   type = activeAISignal.type;
+   botDirection = activeAISignal.botDirection;
 
-    botDirection = lockedAISignal.botDirection;
+   if (activeAISignal.pred !== null &&
+    activeAISignal.pred !== undefined) {
 
-    if (lockedAISignal.pred !== null &&
-        lockedAISignal.pred !== undefined) {
-
-        pred = Number(lockedAISignal.pred);
-
+    pred = Number(activeAISignal.pred);
         const predBox = document.getElementById('bot-pred');
 
         if (predBox) {
@@ -1402,17 +1398,17 @@ let pred = parseInt(document.getElementById('bot-pred')?.value || 5);
 
 
 // LOCKED AI SIGNAL APPLY (use only applied signal)
-if (lockedAISignal) {
+if (activeAISignal) {
 
-    type = lockedAISignal.type;
-
-    botDirection = lockedAISignal.botDirection;
+    type = activeAISignal.type;
+    botDirection = activeAISignal.botDirection;
 
     if (
-        lockedAISignal.pred !== null &&
-        lockedAISignal.pred !== undefined
+        activeAISignal.pred !== null &&
+        activeAISignal.pred !== undefined
     ) {
-        pred = Number(lockedAISignal.pred);
+
+        pred = Number(activeAISignal.pred);
     }
 
 }
@@ -2280,23 +2276,27 @@ if (
 // Find digits with abnormal frequency
 console.log("DIGIT RANKING", JSON.stringify(ranked.slice(0,3)));
 console.log("DIGIT TOTAL", total);
-ranked.slice(0, 3).forEach(({d, c}) => {
+// MATCHES USE SECOND MOST APPEARING DIGIT ONLY
 
-    const digit = d;
-    const count = c;
+const matchRank = ranked[1];
+
+if (matchRank) {
+
+    const digit = matchRank.d;
+    const count = matchRank.c;
 
     const pct = (count / total) * 100;
 
-    if (pct > 11) {
+    console.log("ADDING MATCH SIGNAL SECOND RANK", digit);
 
-        console.log("ADDING MATCH SIGNAL", digit);
+    if (pct > 11) {
 
         signals.push({
             type:'matches_differs',
             botDirection:'matches',
             direction:`Matches ${digit}`,
             confidence: Math.min(88, Math.round(pct * 5)),
-            reason: `Digit ${digit} appeared ${pct.toFixed(1)}% of ${total} ticks`,
+            reason: `Second highest digit ${digit} appeared ${pct.toFixed(1)}% of ${total} ticks`,
             color:'var(--amber)',
 
             digit,
@@ -2307,7 +2307,7 @@ ranked.slice(0, 3).forEach(({d, c}) => {
         });
 
     }
-});
+}
 
 
 
@@ -2390,9 +2390,7 @@ const best = filteredSignals.sort(
 
 console.log("SELECTED AI SIGNAL", best);
 
-if (!aiSignalLocked) {
-    activeAISignal = best || null;
-}
+activeAISignal = best || null;
 
 console.log("ACTIVE AI SIGNAL NOW", activeAISignal);
 
@@ -2435,16 +2433,7 @@ if (activeAISignal && !aiSettingsApplied) {
     }
 
 
-    lockedAISignal = {
-        type: activeAISignal.type,
-        botDirection: activeAISignal.botDirection,
-        pred: activeAISignal.pred,
-        confidence: activeAISignal.confidence
-    };
 
-    aiSignalLocked = true;
-
-    console.log("AI SIGNAL LOCKED", lockedAISignal);
 
 
     renderDirButtons();
@@ -2774,7 +2763,7 @@ function getTopSignals(symbol, n = 5) {
     // ── DIGIT MATCH SIGNALS ──
 const ranked = counts.map((c,d)=>({d,c})).sort((a,b)=>b.c-a.c);
 
-ranked.slice(0,3).forEach(({d,c}) => {
+ranked.slice(1,2).forEach(({d,c}) => {
     const pct  = (c / total) * 100;
     const conf = Math.round(pct * 6.5);
 
