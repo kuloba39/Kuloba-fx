@@ -2381,16 +2381,16 @@ console.log(
     "FILTERED AI SIGNALS",
     filteredSignals
 );
-console.log("SELECTED AI SIGNAL", filteredSignals[0]);
-
-activeAISignal = filteredSignals[0] || null;
-
-console.log("ACTIVE AI SIGNAL NOW", activeAISignal);
-
 
 const best = filteredSignals.sort(
     (a,b)=>b.confidence-a.confidence
 )[0];
+
+console.log("SELECTED AI SIGNAL", best);
+
+activeAISignal = best || null;
+
+console.log("ACTIVE AI SIGNAL NOW", activeAISignal);
 
 
 if (!best) {
