@@ -1309,6 +1309,30 @@ if (activeAISignal) {
 }
 
 // USER OVER/UNDER FALLBACK
+// AI SIGNAL HAS HIGHEST PRIORITY
+if (activeAISignal) {
+
+    type = activeAISignal.type;
+    botDirection = activeAISignal.botDirection;
+
+    if (
+        activeAISignal.pred !== null &&
+        activeAISignal.pred !== undefined
+    ) {
+        pred = Number(activeAISignal.pred);
+    }
+
+    console.log("AI OVERRIDE ACTIVE", {
+        type,
+        botDirection,
+        pred,
+        signal: activeAISignal
+    });
+
+}
+
+
+// USER SIGNAL SECOND PRIORITY
 else if (
     lockedOverUnderSignal &&
     lockedOverUnderSignal.type === 'over_under'
@@ -1323,13 +1347,6 @@ else if (
     ) {
         pred = Number(lockedOverUnderSignal.pred);
     }
-
-    console.log("USER SIGNAL FINAL LOCK", {
-        signal: lockedOverUnderSignal,
-        finalType:type,
-        finalDirection:botDirection,
-        finalPred:pred
-    });
 
 }  // <-- closes else if
 
