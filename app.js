@@ -1482,63 +1482,48 @@ let type = document.getElementById('bot-type')?.value || 'over_under';
 let pred = parseInt(document.getElementById('bot-pred')?.value || 5);
 
 
-// OVER/UNDER USE ONLY USER APPLIED SIGNAL
-if (
-    lockedOverUnderSignal &&
-    lockedOverUnderSignal.type === 'over_under'
-) {
-
-    type = "over_under";
-
-
-    if (
-        lockedOverUnderSignal.botDirection !== null &&
-        lockedOverUnderSignal.botDirection !== undefined
-    ) {
-
-        botDirection = lockedOverUnderSignal.botDirection;
-
-    }
-
-
-    if (
-        lockedOverUnderSignal.pred !== null &&
-        lockedOverUnderSignal.pred !== undefined
-    ) {
-
-        pred = Number(lockedOverUnderSignal.pred);
-
-    }
-
-}
-
-
-// OTHER CONTRACTS USE AI SIGNAL
-else if (
-    activeAISignal &&
-    activeAISignal.type !== 'over_under'
-) {
+// AI SIGNAL ALWAYS HAS PRIORITY
+if (activeAISignal) {
 
     type = activeAISignal.type;
-
 
     if (
         activeAISignal.botDirection !== null &&
         activeAISignal.botDirection !== undefined
     ) {
-
         botDirection = activeAISignal.botDirection;
-
     }
-
 
     if (
         activeAISignal.pred !== null &&
         activeAISignal.pred !== undefined
     ) {
-
         pred = Number(activeAISignal.pred);
+    }
 
+}
+
+
+// USER LOCKED SIGNAL FALLBACK
+else if (
+    lockedOverUnderSignal &&
+    lockedOverUnderSignal.type === 'over_under'
+) {
+
+    type = lockedOverUnderSignal.type;
+
+    if (
+        lockedOverUnderSignal.botDirection !== null &&
+        lockedOverUnderSignal.botDirection !== undefined
+    ) {
+        botDirection = lockedOverUnderSignal.botDirection;
+    }
+
+    if (
+        lockedOverUnderSignal.pred !== null &&
+        lockedOverUnderSignal.pred !== undefined
+    ) {
+        pred = Number(lockedOverUnderSignal.pred);
     }
 
 }
@@ -2491,6 +2476,29 @@ console.log("DIGIT TOTAL", total);
 // MATCHES USE SECOND MOST APPEARING DIGIT ONLY
 
 const matchRank = ranked[1];
+// DIGIT MATCH SIGNAL
+if (matchRank) {
+
+    const digit = matchRank.d;
+    const count = matchRank.c;
+
+    const pct = (count / total) * 100;
+
+    if (pct > 11) {
+
+        signals.push({
+            type:'digit_match',
+            botDirection:'match',
+            direction:`Match ${digit}`,
+            confidence: Math.min(88, Math.round(pct * 5)),
+            reason:`AI digit match prediction ${digit} (${pct.toFixed(1)}% frequency)`,
+            color:'var(--amber)',
+            pred: digit
+        });
+
+    }
+
+}
 
 if (matchRank) {
 
