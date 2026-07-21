@@ -1404,8 +1404,18 @@ if (
     lockedOverUnderSignal.type === 'over_under'
 ) {
 
-    type = lockedOverUnderSignal.type;
-    botDirection = lockedOverUnderSignal.botDirection;
+    type = "over_under";
+
+
+    if (
+        lockedOverUnderSignal.botDirection !== null &&
+        lockedOverUnderSignal.botDirection !== undefined
+    ) {
+
+        botDirection = lockedOverUnderSignal.botDirection;
+
+    }
+
 
     if (
         lockedOverUnderSignal.pred !== null &&
@@ -1413,17 +1423,30 @@ if (
     ) {
 
         pred = Number(lockedOverUnderSignal.pred);
+
     }
 
 }
+
+
+// OTHER CONTRACTS USE AI SIGNAL
 else if (
     activeAISignal &&
     activeAISignal.type !== 'over_under'
 ) {
 
-    // KEEP OTHER CONTRACTS WORKING AS BEFORE
     type = activeAISignal.type;
-    botDirection = activeAISignal.botDirection;
+
+
+    if (
+        activeAISignal.botDirection !== null &&
+        activeAISignal.botDirection !== undefined
+    ) {
+
+        botDirection = activeAISignal.botDirection;
+
+    }
+
 
     if (
         activeAISignal.pred !== null &&
@@ -1431,6 +1454,7 @@ else if (
     ) {
 
         pred = Number(activeAISignal.pred);
+
     }
 
 }
@@ -1438,6 +1462,13 @@ else if (
 
 
 const duration = parseInt(document.getElementById('bot-dur')?.value || 1);
+console.log("FINAL SIGNAL SOURCE CHECK", {
+    lockedOverUnderSignal,
+    activeAISignal,
+    finalType: type,
+    finalDirection: botDirection,
+    finalPred: pred
+});
 
 // Map to Deriv contract type
 const typeMap = CONTRACT_MAP[type];
