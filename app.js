@@ -2927,6 +2927,10 @@ function getTopSignals(symbol, n = 5) {
     const evenCount = counts.filter((_,i) => i%2===0).reduce((a,b)=>a+b,0);
     const evenPct   = (evenCount / total) * 100;
     const oddPct    = 100 - evenPct;
+    console.log("EVEN ODD AI", {
+    evenPct,
+    oddPct
+});
     if (evenPct > 50) signals.push({ direction:'Even Only', confidence:Math.min(93,Math.round(evenPct)), type:'even_odd', botDirection:'even', color:'var(--green)', pred:null, reason:`Even ${evenPct.toFixed(1)}% of ${total} ticks` });
     if (oddPct  > 50) signals.push({ direction:'Odd Only',  confidence:Math.min(93,Math.round(oddPct)),  type:'even_odd', botDirection:'odd',  color:'var(--teal)',  pred:null, reason:`Odd ${oddPct.toFixed(1)}% of ${total} ticks` });
 
