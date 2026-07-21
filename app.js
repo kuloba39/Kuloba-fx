@@ -1442,14 +1442,14 @@ const duration = parseInt(document.getElementById('bot-dur')?.value || 1);
 // Map to Deriv contract type
 const typeMap = CONTRACT_MAP[type];
 
-console.log("TYPE CHECK", {
+console.log("TYPE CHECK JSON", JSON.stringify({
     type,
     botDirection,
     pred,
     signalPred: activeAISignal?.pred,
     signalDirection: activeAISignal?.botDirection,
     contractType: typeMap?.[botDirection]
-});
+}, null, 2));
 
 const contractType = typeMap?.[botDirection];
     
