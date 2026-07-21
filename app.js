@@ -45,6 +45,8 @@ let marketMemory     = {};
 // Signal tracking
 let seenSignals      = new Set();
 let activeAISignal = null;
+let lockedAISignal = null;
+let aiSignalLocked = false;
 let signalHistory    = [];
 
 // Audio — coins for win, cash register ding, realistic loss sound
@@ -1277,16 +1279,16 @@ let type = document.getElementById('bot-type')?.value || 'over_under';
 let pred = parseInt(document.getElementById('bot-pred')?.value || 5);
 
 
-if (activeAISignal) {
+if (lockedAISignal) {
 
-    type = activeAISignal.type;
+    type = lockedAISignal.type;
 
-    botDirection = activeAISignal.botDirection;
+    botDirection = lockedAISignal.botDirection;
 
-    if (activeAISignal.pred !== null &&
-        activeAISignal.pred !== undefined) {
+    if (lockedAISignal.pred !== null &&
+        lockedAISignal.pred !== undefined) {
 
-        pred = Number(activeAISignal.pred);
+        pred = Number(lockedAISignal.pred);
 
         const predBox = document.getElementById('bot-pred');
 
@@ -1399,18 +1401,18 @@ let type = document.getElementById('bot-type')?.value || 'over_under';
 let pred = parseInt(document.getElementById('bot-pred')?.value || 5);
 
 
-// AI SIGNAL APPLY (AI overrides UI settings)
-if (activeAISignal) {
+// LOCKED AI SIGNAL APPLY (use only applied signal)
+if (lockedAISignal) {
 
-    type = activeAISignal.type;
+    type = lockedAISignal.type;
 
-    botDirection = activeAISignal.botDirection;
+    botDirection = lockedAISignal.botDirection;
 
     if (
-        activeAISignal.pred !== null &&
-        activeAISignal.pred !== undefined
+        lockedAISignal.pred !== null &&
+        lockedAISignal.pred !== undefined
     ) {
-        pred = Number(activeAISignal.pred);
+        pred = Number(lockedAISignal.pred);
     }
 
 }
@@ -2388,7 +2390,9 @@ const best = filteredSignals.sort(
 
 console.log("SELECTED AI SIGNAL", best);
 
-activeAISignal = best || null;
+if (!aiSignalLocked) {
+    activeAISignal = best || null;
+}
 
 console.log("ACTIVE AI SIGNAL NOW", activeAISignal);
 
@@ -2429,6 +2433,18 @@ if (activeAISignal && !aiSettingsApplied) {
             predBox.value = activeAISignal.pred;
         }
     }
+
+
+    lockedAISignal = {
+        type: activeAISignal.type,
+        botDirection: activeAISignal.botDirection,
+        pred: activeAISignal.pred,
+        confidence: activeAISignal.confidence
+    };
+
+    aiSignalLocked = true;
+
+    console.log("AI SIGNAL LOCKED", lockedAISignal);
 
 
     renderDirButtons();
