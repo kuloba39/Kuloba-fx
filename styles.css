@@ -26,7 +26,18 @@ body{
     background:#00d2c833;
     color:#fff;
 }
-/* ── MOBILE BOT BAR FIX ── */
+/* ── Mobile Bot Bar Position Fix ── */
+@media(max-width:768px){
+
+    #bot-bar{
+        bottom:18px !important;
+        left:10px !important;
+        right:10px !important;
+        border-radius:12px;
+        padding:8px 12px;
+    }
+
+}
 @media (max-width:768px){
 
     body{
