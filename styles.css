@@ -30,7 +30,7 @@ body{
 @media(max-width:768px){
 
     #bot-bar{
-        bottom:18px !important;
+        bottom:30px !important;
         left:10px !important;
         right:10px !important;
         border-radius:12px;
