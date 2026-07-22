@@ -26,85 +26,77 @@ body{
     background:#00d2c833;
     color:#fff;
 }
-/* ── Mobile Bot Bar Position Fix ── */
+/* ── Mobile Optimizations ── */
 @media(max-width:768px){
 
-    #bot-bar{
-        bottom:30px !important;
-        left:10px !important;
-        right:10px !important;
-        border-radius:12px;
-        padding:8px 12px;
-    }
-
-}
-@media (max-width:768px){
-
     body{
-        padding-bottom:120px !important;
+        padding-bottom:80px !important;
     }
 
 
     #bot-bar{
 
-        position:fixed;
+        position:fixed !important;
 
-        bottom:12px !important;
+        bottom:22px !important;
 
         left:10px !important;
+
         right:10px !important;
 
-        border-radius:16px;
+        z-index:99999 !important;
 
-        padding:12px;
+        border-radius:14px;
 
-        flex-direction:column;
+        padding:8px 12px;
 
-        gap:10px;
+        display:flex;
 
-        box-shadow:0 8px 30px rgba(0,0,0,.45);
+        align-items:center;
+
+        gap:8px;
+
+        box-shadow:0 8px 25px rgba(0,0,0,.45);
 
     }
 
 
     #bot-bar > div{
 
-        width:100%;
+        flex:1;
 
-        justify-content:center;
-
-        text-align:center;
+        min-width:0;
 
     }
 
 
     #bar-info{
 
-        justify-content:center;
-
         flex-wrap:wrap;
+
+        gap:6px;
 
     }
 
 
     #run-btn{
 
-        width:100% !important;
+        width:auto !important;
 
-        height:52px;
+        height:44px;
 
-        font-size:16px !important;
+        font-size:14px !important;
 
-        border-radius:12px;
+        padding:8px 24px !important;
+
+        border-radius:10px;
 
     }
 
 
     #active-bot-name{
 
-        font-size:15px !important;
-
-        padding:12px !important;
+        font-size:14px !important;
 
         text-align:center;
 
@@ -113,9 +105,9 @@ body{
 
     .card{
 
-        border-radius:14px;
+        border-radius:12px;
 
-        margin-bottom:12px;
+        margin-bottom:10px;
 
     }
 
