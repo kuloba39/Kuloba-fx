@@ -280,7 +280,65 @@ body{padding-bottom:60px;}
 @media(min-width:769px){
     #mobile-bot-settings-btn { display: none !important; }
 }
-    </style>
+
+
+/* ── FINAL MOBILE BOT BAR POSITION ── */
+@media(max-width:768px){
+
+    #bot-bar{
+        position:fixed !important;
+        bottom:25px !important;
+        left:12px !important;
+        right:12px !important;
+
+        border-radius:16px !important;
+
+        padding:12px !important;
+
+        flex-direction:column !important;
+
+        gap:10px !important;
+
+        box-shadow:0 8px 30px rgba(0,0,0,.5);
+
+    }
+
+
+    #run-btn{
+
+        width:100% !important;
+
+        height:52px !important;
+
+        font-size:16px !important;
+
+        border-radius:12px !important;
+
+    }
+
+
+    #bar-info{
+
+        display:flex !important;
+
+        justify-content:center;
+
+        flex-wrap:wrap;
+
+        gap:8px;
+
+    }
+
+
+    body{
+
+        padding-bottom:140px !important;
+
+    }
+
+}
+
+</style>
 </head>
 <body>
 
