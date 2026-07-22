@@ -33,100 +33,66 @@ body{
         padding-bottom:80px !important;
     }
 
-
     #bot-bar{
-
         position:fixed !important;
-
         bottom:40px !important;
-
         left:10px !important;
-
         right:10px !important;
-
         z-index:99999 !important;
 
         border-radius:14px;
-
         padding:8px 12px;
 
-        display:flex;
-
-        align-items:center;
+        display:flex !important;
+        flex-direction:row !important;
+        align-items:center !important;
 
         gap:8px;
-
         box-shadow:0 8px 25px rgba(0,0,0,.45);
-
     }
-
 
     #bot-bar > div{
-
         flex:1;
-
         min-width:0;
-
     }
-
 
     #bar-info{
-
+        display:flex !important;
         flex-wrap:wrap;
-
-        gap:12px;
-
+        justify-content:center;
+        gap:6px;
+        font-size:9px !important;
     }
-
 
     #run-btn{
-
         width:auto !important;
-
         height:44px;
-
         font-size:14px !important;
-
         padding:8px 24px !important;
-
         border-radius:10px;
 
+        position:relative;
+        top:-5px;   /* moves button slightly upward */
     }
-
 
     #active-bot-name{
-
         font-size:14px !important;
-
         text-align:center;
-
     }
-
 
     .card{
-
         border-radius:12px;
-
         margin-bottom:10px;
-
     }
-
 
     input,
     select,
     button{
-
         min-height:44px;
-
     }
-
 
     .d-circle{
-
         width:50px;
-
         height:50px;
-
     }
-
 }
