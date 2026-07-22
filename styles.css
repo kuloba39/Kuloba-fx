@@ -26,241 +26,103 @@ body{
     background:#00d2c833;
     color:#fff;
 }
-/* ── Mobile Optimizations ── */
+/* ── MOBILE BOT BAR FIX ── */
 @media (max-width:768px){
 
     body{
-        padding-bottom:100px !important;
-        overflow-x:hidden;
+        padding-bottom:120px !important;
     }
 
 
-    /* Active bot name */
-    #active-bot-name{
-        display:block !important;
-        width:100% !important;
-        text-align:center;
-        font-size:14px !important;
-        padding:12px !important;
-        border-radius:12px !important;
-        margin:8px 0;
-        white-space:normal;
-        overflow-wrap:break-word;
-        background:var(--bg3);
-        border:1px solid var(--border);
-    }
-
-
-    /* Cards */
-    .card{
-        border-radius:14px;
-        margin:8px;
-        padding:4px;
-    }
-
-    .card-sm{
-        border-radius:12px;
-        margin-bottom:8px;
-    }
-
-
-    /* Section headers */
-    .sec-head{
-        font-size:12px;
-        padding:12px 14px;
-    }
-
-
-    /* Badges */
-    .badge{
-        font-size:11px;
-        padding:5px 10px;
-    }
-
-
-    /* Inputs */
-    input,
-    select,
-    button{
-        min-height:44px;
-    }
-
-
-    /* Main action buttons */
-    .btn-run,
-    .btn-stop{
-
-        width:100%;
-        min-height:48px;
-        font-size:15px;
-        padding:14px;
-        border-radius:12px;
-    }
-
-
-    /* Floating bot control bar */
     #bot-bar{
 
         position:fixed;
 
-        bottom:12px;
-        left:10px;
-        right:10px;
+        bottom:18px !important;
 
-        z-index:9999;
-
-        display:flex;
-        flex-wrap:nowrap;
-
-        align-items:center;
-
-        gap:8px;
-
-        padding:10px;
-
-        min-height:64px;
+        left:10px !important;
+        right:10px !important;
 
         border-radius:16px;
 
-        background:rgba(22,27,39,.96);
+        padding:12px;
 
-        backdrop-filter:blur(12px);
+        flex-direction:column;
 
-        border:1px solid var(--border);
+        gap:10px;
 
-        box-shadow:
-        0 8px 30px rgba(0,0,0,.45);
+        box-shadow:0 8px 30px rgba(0,0,0,.45);
+
     }
 
 
+    #bot-bar > div{
 
-    /* Hide offline text on small screens */
-    #bar-status{
-        display:none !important;
+        width:100%;
+
+        justify-content:center;
+
+        text-align:center;
+
     }
 
 
-
-    /* Bot information */
     #bar-info{
 
-        display:flex !important;
+        justify-content:center;
 
         flex-wrap:wrap;
 
-        gap:5px;
-
-        font-size:10px !important;
-
-        max-width:55%;
     }
 
 
-
-    #bar-info span{
-
-        background:var(--bg3);
-
-        padding:4px 7px;
-
-        border-radius:8px;
-    }
-
-
-
-    /* Run button */
     #run-btn{
-
-        flex:1;
-
-        min-width:90px;
-
-        min-height:48px;
-
-        border-radius:12px;
-
-        font-size:15px !important;
-
-        font-weight:900;
-
-        padding:12px !important;
-
-    }
-
-
-
-    /* Digit circles */
-    .d-circle{
-
-        width:52px;
-
-        height:52px;
-
-        font-size:11px;
-
-    }
-
-
-
-    /* Side panels */
-    .sidebar,
-    .sidebar-right{
 
         width:100% !important;
 
-    }
+        height:52px;
 
+        font-size:16px !important;
 
-
-    /* AI scanner cards */
-    .scanner-signal{
-
-        margin:8px;
-
-        padding:14px;
+        border-radius:12px;
 
     }
 
 
+    #active-bot-name{
 
-    /* Make tabs easier on phone */
-    .tab-btn{
+        font-size:15px !important;
 
-        padding:10px 14px;
+        padding:12px !important;
 
-        font-size:12px;
-
-    }
-
-
-
-    /* Prevent tables/rows overflowing */
-    .tx-row{
-
-        padding:10px;
-
-        gap:8px;
+        text-align:center;
 
     }
 
 
+    .card{
 
-    /* Summary cards */
-    .summary-bar{
+        border-radius:14px;
 
-        grid-template-columns:1fr;
-
-        gap:8px;
-
-        padding:10px;
+        margin-bottom:12px;
 
     }
 
 
+    input,
+    select,
+    button{
 
-    .summary-value{
+        min-height:44px;
 
-        font-size:18px;
+    }
+
+
+    .d-circle{
+
+        width:50px;
+
+        height:50px;
 
     }
 
