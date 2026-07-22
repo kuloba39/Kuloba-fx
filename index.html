@@ -101,7 +101,24 @@ input::placeholder{color:var(--dim);}
 .btn-ghost{background:var(--bg3);color:var(--muted);border:1px solid var(--border);}
 .btn-ghost:hover{color:var(--text);border-color:var(--teal);}
 .btn-amber{background:var(--amber);color:#000;}
-.btn-run{background:var(--teal);color:#000;font-size:14px;font-weight:900;padding:14px 32px;border-radius:8px;letter-spacing:.03em;box-shadow:0 4px 20px #00d2c844;}
+.btn-run{
+    background:linear-gradient(135deg,#00d2c8,#00a89f);
+    color:#000;
+    font-size:14px;
+    font-weight:900;
+    padding:14px 32px;
+    border-radius:14px;
+    letter-spacing:.03em;
+    box-shadow:
+        0 8px 24px rgba(0,210,200,.35);
+    transition:all .25s ease;
+}
+
+.btn-run:hover{
+    transform:translateY(-2px);
+    box-shadow:
+        0 12px 32px rgba(0,210,200,.45);
+}
 .btn-run:hover{opacity:.9;transform:translateY(-1px);}
 .btn-stop{background:var(--red);color:#fff;font-size:14px;font-weight:900;padding:14px 32px;border-radius:8px;}
 
@@ -162,11 +179,31 @@ input::placeholder{color:var(--dim);}
 .sidebar-right{width:280px;flex-shrink:0;background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
 
 /* ── Section header ── */
-.sec-head{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;padding:10px 14px 6px;}
+.sec-head{
+    font-size:11px;
+    font-weight:800;
+    color:#8b97a8;
+    text-transform:uppercase;
+    letter-spacing:.15em;
+    padding:10px 14px 6px;
+}
 
 /* ── Bot bar ── */
-#bot-bar{position:fixed;bottom:0;left:0;right:0;z-index:999;background:var(--bg2);border-top:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;gap:12px;}
-body{padding-bottom:60px;}
+#bot-bar{
+    position:fixed;
+    bottom:0;
+    left:0;
+    right:0;
+    z-index:999;
+    background:rgba(22,27,39,.92);
+    border-top:1px solid rgba(255,255,255,.05);
+    backdrop-filter:blur(14px);
+    padding:10px 16px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    box-shadow:0 -4px 20px rgba(0,0,0,.35);
+}
 
 /* ── D-Circles ── */
 .d-circle{width:66px;height:66px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border:2px solid var(--border);background:var(--bg3);transition:all .2s;user-select:none;}
@@ -562,6 +599,18 @@ body{padding-bottom:60px;}
             <div class="card-sm" style="padding:10px;">
                 <div style="font-size:9px;color:var(--muted);text-transform:uppercase;font-weight:700;margin-bottom:4px;">Active Bot</div>
                 <div id="active-bot-name"
+                #active-bot-name{
+    background:linear-gradient(
+        135deg,
+        rgba(0,210,200,.15),
+        rgba(0,210,200,.05)
+    );
+    border:1px solid rgba(0,210,200,.25);
+    border-radius:14px;
+    padding:12px;
+    text-align:center;
+    box-shadow:0 0 20px rgba(0,210,200,.15);
+}
 style="
 font-size:16px;
 font-weight:900;
