@@ -1,30 +1,98 @@
-/* ✨ DolarHunter — Bright Girly Scrollbar & Base Styles */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+/* DolarHunter Dark Theme Extras */
+
+::-webkit-scrollbar{
+    width:6px;
+    height:6px;
 }
 
-::-webkit-scrollbar-track {
-  background: #fce7f3; /* soft pink rose */
+::-webkit-scrollbar-track{
+    background:#161b27;
 }
 
-::-webkit-scrollbar-thumb {
-  background: #f9a8d4; /* bubblegum pink */
-  border-radius: 3px;
+::-webkit-scrollbar-thumb{
+    background:#2d3748;
+    border-radius:6px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #ec4899; /* hot pink */
+::-webkit-scrollbar-thumb:hover{
+    background:#00d2c8;
 }
 
-body {
-  user-select: none;
-  background: #fdf0f7; /* blush white */
-  accent-color: #ec4899; /* pink focus rings on inputs */
+body{
+    user-select:none;
 }
 
-/* ✨ Optional: pink selection highlight */
-::selection {
-  background: #f9a8d4;
-  color: #831843;
+::selection{
+    background:#00d2c833;
+    color:#fff;
+}
+/* ── Mobile Optimizations ── */
+@media (max-width:768px){
+
+    body{
+        padding-bottom:90px;
+    }
+
+    #active-bot-name{
+        display:block !important;
+        width:100% !important;
+        text-align:center;
+        font-size:14px !important;
+        padding:10px !important;
+        border-radius:10px !important;
+        margin-top:6px;
+        margin-bottom:6px;
+        white-space:normal;
+        overflow-wrap:break-word;
+    }
+
+    .card{
+        border-radius:12px;
+        margin-bottom:10px;
+    }
+
+    .card-sm{
+        border-radius:10px;
+    }
+
+    .sec-head{
+        font-size:12px;
+        padding:12px;
+    }
+
+    .badge{
+        font-size:11px;
+        padding:4px 10px;
+    }
+
+    input,
+    select,
+    button{
+        min-height:44px; /* better finger taps */
+    }
+
+    .btn-run,
+    .btn-stop{
+        width:100%;
+        font-size:15px;
+        padding:14px;
+    }
+
+    #bot-bar{
+        flex-wrap:wrap;
+        gap:8px;
+        padding:10px;
+        min-height:auto;
+    }
+
+    .d-circle{
+        width:52px;
+        height:52px;
+        font-size:11px;
+    }
+
+    .sidebar,
+    .sidebar-right{
+        width:100% !important;
+    }
 }
