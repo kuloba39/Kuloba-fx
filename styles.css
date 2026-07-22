@@ -72,7 +72,7 @@ body{
         border-radius:10px;
 
         position:relative;
-        top:-15px;   /* moves button slightly upward */
+        top:-30px;   /* moves button slightly upward */
     }
 
     #active-bot-name{
