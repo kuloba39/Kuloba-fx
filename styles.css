@@ -30,69 +30,238 @@ body{
 @media (max-width:768px){
 
     body{
-        padding-bottom:90px;
+        padding-bottom:100px !important;
+        overflow-x:hidden;
     }
 
+
+    /* Active bot name */
     #active-bot-name{
         display:block !important;
         width:100% !important;
         text-align:center;
         font-size:14px !important;
-        padding:10px !important;
-        border-radius:10px !important;
-        margin-top:6px;
-        margin-bottom:6px;
+        padding:12px !important;
+        border-radius:12px !important;
+        margin:8px 0;
         white-space:normal;
         overflow-wrap:break-word;
+        background:var(--bg3);
+        border:1px solid var(--border);
     }
 
+
+    /* Cards */
     .card{
-        border-radius:12px;
-        margin-bottom:10px;
+        border-radius:14px;
+        margin:8px;
+        padding:4px;
     }
 
     .card-sm{
-        border-radius:10px;
+        border-radius:12px;
+        margin-bottom:8px;
     }
 
+
+    /* Section headers */
     .sec-head{
         font-size:12px;
-        padding:12px;
+        padding:12px 14px;
     }
 
+
+    /* Badges */
     .badge{
         font-size:11px;
-        padding:4px 10px;
+        padding:5px 10px;
     }
 
+
+    /* Inputs */
     input,
     select,
     button{
-        min-height:44px; /* better finger taps */
+        min-height:44px;
     }
 
+
+    /* Main action buttons */
     .btn-run,
     .btn-stop{
+
         width:100%;
+        min-height:48px;
         font-size:15px;
         padding:14px;
+        border-radius:12px;
     }
 
+
+    /* Floating bot control bar */
     #bot-bar{
-        flex-wrap:wrap;
+
+        position:fixed;
+
+        bottom:12px;
+        left:10px;
+        right:10px;
+
+        z-index:9999;
+
+        display:flex;
+        flex-wrap:nowrap;
+
+        align-items:center;
+
         gap:8px;
+
         padding:10px;
-        min-height:auto;
+
+        min-height:64px;
+
+        border-radius:16px;
+
+        background:rgba(22,27,39,.96);
+
+        backdrop-filter:blur(12px);
+
+        border:1px solid var(--border);
+
+        box-shadow:
+        0 8px 30px rgba(0,0,0,.45);
     }
 
+
+
+    /* Hide offline text on small screens */
+    #bar-status{
+        display:none !important;
+    }
+
+
+
+    /* Bot information */
+    #bar-info{
+
+        display:flex !important;
+
+        flex-wrap:wrap;
+
+        gap:5px;
+
+        font-size:10px !important;
+
+        max-width:55%;
+    }
+
+
+
+    #bar-info span{
+
+        background:var(--bg3);
+
+        padding:4px 7px;
+
+        border-radius:8px;
+    }
+
+
+
+    /* Run button */
+    #run-btn{
+
+        flex:1;
+
+        min-width:90px;
+
+        min-height:48px;
+
+        border-radius:12px;
+
+        font-size:15px !important;
+
+        font-weight:900;
+
+        padding:12px !important;
+
+    }
+
+
+
+    /* Digit circles */
     .d-circle{
+
         width:52px;
+
         height:52px;
+
         font-size:11px;
+
     }
 
+
+
+    /* Side panels */
     .sidebar,
     .sidebar-right{
+
         width:100% !important;
+
     }
+
+
+
+    /* AI scanner cards */
+    .scanner-signal{
+
+        margin:8px;
+
+        padding:14px;
+
+    }
+
+
+
+    /* Make tabs easier on phone */
+    .tab-btn{
+
+        padding:10px 14px;
+
+        font-size:12px;
+
+    }
+
+
+
+    /* Prevent tables/rows overflowing */
+    .tx-row{
+
+        padding:10px;
+
+        gap:8px;
+
+    }
+
+
+
+    /* Summary cards */
+    .summary-bar{
+
+        grid-template-columns:1fr;
+
+        gap:8px;
+
+        padding:10px;
+
+    }
+
+
+
+    .summary-value{
+
+        font-size:18px;
+
+    }
+
 }
