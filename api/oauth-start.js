@@ -8,7 +8,7 @@ export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).end();
 
     const clientId = process.env.DERIV_CLIENT_ID;
-    const redirectUri = 'https://dolarhunter.site/api/oauth-callback';
+    const redirectUri = 'https://dolarhunter.vercel.app/api/oauth-callback';
 
     function base64url(buf) {
         return Buffer.from(buf).toString('base64')
